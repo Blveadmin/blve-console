@@ -15,26 +15,38 @@ export async function GET(request: Request) {
     if (cached) {
       return NextResponse.json({ 
         success: true, 
-        data: cached,
+         cached,
         fromCache: true
       })
     }
 
-    // Cache miss - fetch from DB
+    // Get cookie store (synchronous in route handlers)
     const cookieStore = cookies()
+    
+    // Create supabase client with proper cookie handling
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           get(name: string) {
-            return cookieStore.get(name)?.value
+            // Fix: Handle cookie store typing correctly
+            const cookie = cookieStore.get(name)
+            return cookie ? cookie.value : null
           },
           set(name: string, value: string, options: any) {
-            cookieStore.set(name, value, options)
+            try {
+              cookieStore.set(name, value, options)
+            } catch (error) {
+              console.warn('Cookie set failed:', name)
+            }
           },
           remove(name: string, options: any) {
-            cookieStore.set(name, '', options)
+            try {
+              cookieStore.set(name, '', { ...options, maxAge: 0 })
+            } catch (error) {
+              console.warn('Cookie remove failed:', name)
+            }
           },
         },
       }
