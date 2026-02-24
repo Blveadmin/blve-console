@@ -1,4 +1,4 @@
-// lib/cache.ts - Redis optional with type-safe error handling
+// lib/cache.ts - Redis optional with safe typing
 let redisClient: any = null
 
 try {
@@ -28,10 +28,10 @@ const CACHE_TTL = 300000 // 5 minutes in ms
 
 export async function getCache<T>(key: string): Promise<T | null> {
   try {
-    // Try Redis first if available
+    // Try Redis first if available (no generic type parameter on .get())
     if (redisClient) {
-      const data = await redisClient.get<T>(key)
-      if (data !== null && data !== undefined) return data
+      const data = await redisClient.get(key)
+      if (data !== null && data !== undefined) return data as T
     }
     
     // Fallback to memory cache
@@ -102,7 +102,7 @@ export async function getCachedOrgDashboard(slug: string) {
   return null
 }
 
-export async function setCachedOrgDashboard(slug: string, data: any) {
+export async function setCachedOrgDashboard(slug: string,  any) {
   const cacheKey = `org:dashboard:${slug}`
   await setCache(cacheKey, data, 300) // 5 minute cache
 }
