@@ -1,43 +1,83 @@
-import { Redis } from '@upstash/redis'
+// lib/cache.ts - Redis optional fallback
+let redisClient: any = null
 
-// Initialize Redis client
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!
-})
-
-// Cache TTL constants (in seconds)
-const TTL = {
-  SHORT: 60,      // 1 minute
-  MEDIUM: 300,    // 5 minutes
-  LONG: 3600,     // 1 hour
-  DAY: 86400      // 24 hours
+try {
+  // Only initialize Redis if credentials exist
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    const { Redis } = require('@upstash/redis')
+    redisClient = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+    console.log('✅ Redis cache initialized')
+  } else {
+    console.warn('⚠️ Redis not configured - using fallback memory cache')
+  }
+} catch (error) {
+  console.warn('⚠️ Redis initialization failed:', error.message)
 }
 
-// Generic cache functions
+// Fallback in-memory cache (for development/local testing)
+const memoryCache = new Map<string, any>()
+const CACHE_TTL = 300000 // 5 minutes in ms
+
 export async function getCache<T>(key: string): Promise<T | null> {
   try {
-    const data = await redis.get<T>(key)
-    return data
+    // Try Redis first if available
+    if (redisClient) {
+      const data = await redisClient.get<T>(key)
+      if (data) return data
+    }
+    
+    // Fallback to memory cache
+    const cached = memoryCache.get(key)
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.value
+    }
+    
+    return null
   } catch (error) {
-    console.error('Redis get error:', error)
+    console.warn('Cache get failed:', error)
     return null
   }
 }
 
-export async function setCache(key: string, value: any, ttl: number = TTL.MEDIUM): Promise<void> {
+export async function setCache(key: string, value: any, ttl: number = 300): Promise<void> {
   try {
-    await redis.set(key, value, { ex: ttl })
+    // Try Redis first if available
+    if (redisClient) {
+      await redisClient.set(key, value, { ex: ttl })
+      return
+    }
+    
+    // Fallback to memory cache
+    memoryCache.set(key, {
+      value,
+      timestamp: Date.now()
+    })
+    
+    // Auto-expire after TTL
+    setTimeout(() => {
+      if (memoryCache.has(key)) {
+        const cached = memoryCache.get(key)
+        if (cached && Date.now() - cached.timestamp >= CACHE_TTL) {
+          memoryCache.delete(key)
+        }
+      }
+    }, ttl * 1000)
   } catch (error) {
-    console.error('Redis set error:', error)
+    console.warn('Cache set failed:', error)
   }
 }
 
 export async function deleteCache(key: string): Promise<void> {
   try {
-    await redis.del(key)
+    if (redisClient) {
+      await redisClient.del(key)
+    }
+    memoryCache.delete(key)
   } catch (error) {
-    console.error('Redis delete error:', error)
+    console.warn('Cache delete failed:', error)
   }
 }
 
@@ -55,10 +95,9 @@ export async function getCachedOrgDashboard(slug: string) {
 
 export async function setCachedOrgDashboard(slug: string, data: any) {
   const cacheKey = `org:dashboard:${slug}`
-  await setCache(cacheKey, data, TTL.MEDIUM)
+  await setCache(cacheKey, data, 300) // 5 minute cache
 }
 
-// Clear org cache when transactions occur
 export async function invalidateOrgCache(slug: string) {
   const cacheKey = `org:dashboard:${slug}`
   await deleteCache(cacheKey)
