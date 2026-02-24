@@ -7,11 +7,11 @@ export async function GET(request: Request) {
   const redirectPath = requestUrl.searchParams.get('redirect') || '/'
 
   if (code) {
-    // Minimal working pattern - bypasses all cookie typing issues
+    // Minimal working pattern - bypasses ALL cookie typing issues
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: {} } // Empty cookies config works for OAuth exchange
+      { cookies: {} } // Empty config works for OAuth code exchange
     )
     await supabase.auth.exchangeCodeForSession(code)
   }
