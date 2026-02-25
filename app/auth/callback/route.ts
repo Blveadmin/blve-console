@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(redirectPath, requestUrl.origin))
   }
 
-  // CRITICAL FOR NEXT.JS 16: MUST AWAIT cookies() to get resolved cookie store
+  // CRITICAL FOR NEXT.JS 16: MUST AWAIT cookies() to resolve Promise
   const cookieStore = await cookies()
 
   const supabase = createServerClient(
@@ -19,29 +19,19 @@ export async function GET(request: Request) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return cookieStore.getAll()
+        get(name: string) {
+          return cookieStore.get(name)?.value ?? null
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            try {
-              cookieStore.set(name, value, options)
-            } catch (error) {
-              // Safe to ignore edge runtime quirks
-              console.warn(`Cookie set failed for ${name}`)
-            }
-          })
+        set(name: string, value: string, options: any) {
+          cookieStore.set(name, value, options)
+        },
+        remove(name: string, options: any) {
+          cookieStore.set(name, '', { ...options, maxAge: 0 })
         },
       },
     }
   )
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code)
-  
-  if (error) {
-    console.error('OAuth exchange failed:', error.message)
-    return NextResponse.redirect(new URL('/?error=auth_failed', requestUrl.origin))
-  }
-
+  await supabase.auth.exchangeCodeForSession(code)
   return NextResponse.redirect(new URL(redirectPath, requestUrl.origin))
 }
