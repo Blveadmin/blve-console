@@ -11,13 +11,14 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const slug = searchParams.get('slug')?.toLowerCase().trim().replace(/\.$/, '') || 'fiu'
 
-    const {  org } = await supabase
+    // ✅ CORRECT DESTRUCTURING: { data: org, error }
+    const { data: org, error } = await supabase
       .from('organizations')
       .select('*')
       .ilike('slug', slug)
       .single()
 
-    if (!org) {
+    if (error || !org) {
       return NextResponse.json(
         { success: false, error: `Organization "${slug}" not found` },
         { status: 404 }
@@ -37,7 +38,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      data: {
+       {
         ...org,
         sub_orgs: subOrgs
       }
