@@ -11,7 +11,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const slug = searchParams.get('slug')?.toLowerCase().trim().replace(/\.$/, '') || 'fiu'
 
-    // ✅ CORRECT DESTRUCTURING: {  org, error } (not {  org })
     const {  org, error } = await supabase
       .from('organizations')
       .select('*')
@@ -36,7 +35,6 @@ export async function GET(request: Request) {
       subOrgs = subQuery || []
     }
 
-    // ✅ CORRECT SYNTAX: "" with colon before nested object
     return NextResponse.json({
       success: true,
        {
