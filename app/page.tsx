@@ -1,13 +1,13 @@
-export const dynamic = 'force-dynamic'
-  'use client'
+'use client'
 
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { Suspense } from 'react'
 
-export default function Dashboard() {
+function DashboardContent() {
   const searchParams = useSearchParams()
   const orgSlug = searchParams.get('org')?.toLowerCase().trim().replace(/\.$/, '') || 'fiu'
-  
+
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -128,5 +128,13 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div>⏳ Loading dashboard...</div>}>
+      <DashboardContent />
+    </Suspense>
   )
 }
