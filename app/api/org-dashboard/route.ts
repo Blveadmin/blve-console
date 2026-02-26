@@ -11,13 +11,14 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const slug = searchParams.get('slug')?.toLowerCase().trim().replace(/\.$/, '') || 'fiu'
 
-    const {  org, error } = await supabase
+    // FIXED: destructure 'data' as 'org' + 'error'
+    const { data: org, error: queryError } = await supabase
       .from('organizations')
       .select('*')
       .ilike('slug', slug)
       .single()
 
-    if (error || !org) {
+    if (queryError || !org) {
       return NextResponse.json(
         { success: false, error: `Organization "${slug}" not found` },
         { status: 404 }
@@ -26,23 +27,29 @@ export async function GET(request: Request) {
 
     let subOrgs = []
     if (org.org_type === 'parent' && org.id) {
-      const {  subQuery } = await supabase
+      // FIXED: same destructuring pattern here
+      const { data: subOrgsData, error: subError } = await supabase
         .from('organizations')
         .select('*')
         .eq('parent_org_id', org.id)
         .order('name', { ascending: true })
 
-      subOrgs = subQuery || []
+      if (subError) {
+        console.error('Sub-orgs query error:', subError.message)
+      }
+
+      subOrgs = subOrgsData || []
     }
 
     return NextResponse.json({
       success: true,
-       {
+      data: {
         ...org,
         sub_orgs: subOrgs
       }
     })
   } catch (error: any) {
+    console.error('API catch error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
