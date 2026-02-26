@@ -11,14 +11,18 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const slug = searchParams.get('slug')?.toLowerCase().trim().replace(/\.$/, '') || 'fiu'
 
-    // ✅ FIX #1: Correct destructuring ( org, not org)
-    const {  org, error } = await supabase
+    console.log('API called with slug:', slug);
+
+    const { data: org, error: orgError } = await supabase
       .from('organizations')
       .select('*')
       .ilike('slug', slug)
       .single()
 
-    if (error || !org) {
+    console.log('Found org:', org);
+    console.log('Org query error:', orgError);
+
+    if (orgError || !org) {
       return NextResponse.json(
         { success: false, error: `Organization "${slug}" not found` },
         { status: 404 }
@@ -27,24 +31,27 @@ export async function GET(request: Request) {
 
     let subOrgs = []
     if (org.org_type === 'parent' && org.id) {
-      const {  subQuery } = await supabase
+      const { data: subOrgsData, error: subError } = await supabase
         .from('organizations')
         .select('*')
         .eq('parent_org_id', org.id)
         .order('name', { ascending: true })
 
-      subOrgs = subQuery || []
+      console.log('Sub-orgs:', subOrgsData);
+      console.log('Sub-orgs error:', subError);
+
+      subOrgs = subOrgsData || []
     }
 
-    // ✅ FIX #2: Correct syntax ( { with colon, not data {)
     return NextResponse.json({
       success: true,
-       {
+      data: {
         ...org,
         sub_orgs: subOrgs
       }
     })
   } catch (error: any) {
+    console.error('API catch error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
