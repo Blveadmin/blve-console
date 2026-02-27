@@ -1,26 +1,38 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
+export async function middleware(request: NextRequest) {
+  const response = NextResponse.next()
 
-  const supabase = createMiddlewareClient({ req, res })
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+        },
+      },
+    }
+  )
 
   const {
     data: { session },
   } = await supabase.auth.getSession()
 
-  const isAdminRoute = req.nextUrl.pathname.startsWith('/admin')
-
-  if (isAdminRoute && !session) {
-    // Redirect to login if not authenticated
-    const redirectUrl = new URL('/login', req.url)
-    redirectUrl.searchParams.set('redirect', req.nextUrl.pathname)
+  // Protect /admin/* routes
+  if (request.nextUrl.pathname.startsWith('/admin') && !session) {
+    // Redirect to login
+    const redirectUrl = new URL('/login', request.url)
+    redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
-  return res
+  return response
 }
 
 export const config = {
