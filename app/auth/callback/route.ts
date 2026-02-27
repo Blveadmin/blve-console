@@ -16,9 +16,11 @@ export async function GET(request: NextRequest) {
             return request.cookies.getAll()
           },
           setAll(cookiesToSet) {
+            const response = NextResponse.next()  // ← THIS WAS MISSING
             cookiesToSet.forEach(({ name, value, options }) => {
               response.cookies.set(name, value, options)
             })
+            return response
           },
         },
       }
