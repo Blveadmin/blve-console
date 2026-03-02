@@ -14,33 +14,43 @@ function LoginContent() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const redirectPath = searchParams.get('redirect') || '/admin/dashboard'
+    console.log('Login page mounted - starting session check')
 
-    // Clear hash from callback
+    const redirectPath = searchParams.get('redirect') || '/admin/dashboard'
+    console.log('Redirect target from query:', redirectPath)
+
+    // Clear any leftover hash from callback
     if (window.location.hash) {
+      console.log('Clearing callback hash fragment')
       window.location.hash = ''
     }
 
     // Check session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('getSession result:', { hasSession: !!session, error })
       if (session) {
+        console.log('Session found - redirecting to:', redirectPath)
         // Small delay to ensure cookie is synced
         setTimeout(() => {
           router.replace(redirectPath)
-          // Force full refresh if needed
+          // Force full refresh as fallback
           window.location.href = redirectPath
         }, 500)
       } else {
+        console.log('No session - showing login UI')
         setLoading(false)
       }
     }).catch(err => {
-      console.error('Session check error:', err)
+      console.error('getSession error:', err)
+      setError('Session check failed - try again')
       setLoading(false)
     })
 
     // Auth state listener
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session ? 'session present' : 'no session')
       if (session) {
+        console.log('Listener detected session - redirecting')
         setTimeout(() => {
           router.replace(redirectPath)
           window.location.href = redirectPath
@@ -48,7 +58,10 @@ function LoginContent() {
       }
     })
 
-    return () => listener.subscription.unsubscribe()
+    return () => {
+      console.log('Cleaning up auth listener')
+      listener.subscription.unsubscribe()
+    }
   }, [router, searchParams])
 
   if (loading) return <div className="text-xl">Checking session...</div>
@@ -83,7 +96,7 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-blue-50">
-      <Suspense fallback={<div>Loading login...</div>}>
+      <Suspense fallback={<div className="text-xl">Loading login...</div>}>
         <LoginContent />
       </Suspense>
     </div>
