@@ -20,14 +20,15 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Use getUser() for faster auth check in middleware
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (request.nextUrl.pathname.startsWith('/admin') && !user) {
-    const redirectUrl = new URL('/login', request.url)
-    redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
-    return NextResponse.redirect(redirectUrl)
-  }
+  // TEMP DISABLE: comment out to test login flow without protection
+  // if (request.nextUrl.pathname.startsWith('/admin') && !user) {
+  //   console.log('No user - redirecting to login (disabled for test)')
+  //   const redirectUrl = new URL('/login', request.url)
+  //   redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
+  //   return NextResponse.redirect(redirectUrl)
+  // }
 
   return response
 }
