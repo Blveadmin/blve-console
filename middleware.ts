@@ -14,24 +14,27 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options)
+          })
         },
       },
     }
   )
 
-  // Retry getUser() to handle cookie sync delay after login
+  // Retry getUser() to handle cookie sync delay after login/callback
   let user = null
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= 4; attempt++) {
     const { data } = await supabase.auth.getUser()
     user = data.user
 
+    // Debug log in Vercel runtime
     console.log(`Middleware attempt ${attempt} for ${request.nextUrl.pathname} - user: ${user ? user.email : 'none'}`)
 
     if (user) break
 
-    // Wait 300ms before retry
-    await new Promise(resolve => setTimeout(resolve, 300))
+    // Wait 250ms before next try
+    await new Promise(resolve => setTimeout(resolve, 250))
   }
 
   if (request.nextUrl.pathname.startsWith('/admin') && !user) {
