@@ -15,7 +15,7 @@ interface OrgSummary {
   tx_count: number
   tx_avg: number
   sub_orgs?: OrgSummary[]
-  parent_org_id?: string   // ← FIXED: added this so TypeScript knows sub-orgs have a parent link
+  parent_org_id?: string
 }
 
 interface GlobalSummary {
@@ -70,7 +70,6 @@ export default function AdminDashboard() {
         setLoading(false)
       }
     }
-
     loadData()
   }, [])
 
@@ -126,7 +125,7 @@ export default function AdminDashboard() {
           <div className="divide-y divide-gray-200">
             {orgs.map((parent) => (
               <div key={parent.id}>
-                {/* Parent Row */}
+                {/* Parent Row – clickable to expand */}
                 <div
                   className="flex items-center px-8 py-5 hover:bg-gray-50 cursor-pointer"
                   onClick={() => toggleExpand(parent.id)}
