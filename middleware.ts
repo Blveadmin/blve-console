@@ -14,21 +14,36 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options)
+          })
         },
       },
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // Retry getUser() up to 3 times with delay (helps with cookie sync timing)
+  let user = null
+  for (let i = 0; i < 3; i++) {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
 
-  // TEMP: disable redirect to test if login succeeds without bounce
-  // if (request.nextUrl.pathname.startsWith('/admin') && !user) {
-  //   console.log('No user detected - would redirect to login (disabled for test)')
-  //   const redirectUrl = new URL('/login', request.url)
-  //   redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
-  //   return NextResponse.redirect(redirectUrl)
-  // }
+    // Debug log - visible in Vercel runtime logs
+    console.log(`Middleware attempt ${i + 1} for ${request.nextUrl.pathname} - user: ${user ? user.email : 'null'}`)
+
+    if (user) break
+
+    // Wait 300ms before next retry
+    await new Promise(resolve => setTimeout(resolve, 300))
+  }
+
+  // Protect all /admin/* routes
+  if (request.nextUrl.pathname.startsWith('/admin') && !user) {
+    console.log('No user detected after retries - redirecting to login')
+    const redirectUrl = new URL('/login', request.url)
+    redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
+    return NextResponse.redirect(redirectUrl)
+  }
 
   return response
 }
