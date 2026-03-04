@@ -5,13 +5,19 @@ import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { createClient } from '@supabase/supabase-js' // client-side only
 
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // Lazy init Supabase client (only runs in browser)
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   useEffect(() => {
     console.log('Login page mounted - starting session check')
@@ -69,7 +75,6 @@ function LoginContent() {
   return (
     <div className="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md">
       <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">BLVE Admin Login</h1>
-
       {error && <p className="text-red-600 text-center mb-4">{error}</p>}
 
       <Auth
