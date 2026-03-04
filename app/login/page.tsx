@@ -1,6 +1,6 @@
-// Force new deploy 2026-03-04
 
 'use client'
+// Force rebuild 2026-03-04 - Bart
 
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
