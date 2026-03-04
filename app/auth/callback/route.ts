@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.next()
 
   const host = request.headers.get('host') || 'blve-console-pcvm.vercel.app'
-  const domain = host.startsWith('www.') ? host.slice(4) : host
+  const domain = host.split(':')[0].replace(/^www\./, '')
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,11 +33,11 @@ export async function GET(request: NextRequest) {
             const cookieOptions = {
               ...options,
               path: '/',
-              domain: domain,
-              sameSite: 'lax',
+              domain,
+              sameSite: 'lax' as const,  // ← This fixes the TS error
               secure: true,
               httpOnly: true,
-              maxAge: 60 * 60 * 24 * 7, // 7 days
+              maxAge: 60 * 60 * 24 * 7,
             }
             response.cookies.set(name, value, cookieOptions)
             console.log(`Cookie set: ${name}, value length: ${value.length}, domain: ${cookieOptions.domain}, path: ${cookieOptions.path}`)
@@ -54,9 +54,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=auth_failed', request.url))
   }
 
-  console.log('Session created:', session ? 'success' : 'failed')
-  console.log('User email:', session?.user?.email || 'none')
-  console.log('Access token length:', session?.access_token?.length || 0)
+  if (!session) {
+    console.warn('Session was null after exchange')
+    return NextResponse.redirect(new URL('/login?error=no_session', request.url))
+  }
+
+  console.log('Session created: success')
+  console.log('User email:', session.user?.email || 'none')
+  console.log('Access token length:', session.access_token?.length || 0)
 
   return NextResponse.redirect(new URL('/admin/dashboard', request.url))
 }
