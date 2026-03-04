@@ -6,8 +6,7 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
 
-  console.log('Callback hit - full URL:', request.url)
-  console.log('Code present:', !!code)
+  console.log('Callback hit - code:', code ? 'present' : 'missing')
 
   if (!code) {
     console.log('No code - redirect to login')
@@ -15,9 +14,6 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.next()
-
-  const host = request.headers.get('host') || 'blve-console-pcvm.vercel.app'
-  const domain = host.split(':')[0].replace(/^www\./, '')
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,17 +26,15 @@ export async function GET(request: NextRequest) {
         setAll(cookiesToSet) {
           console.log('Setting', cookiesToSet.length, 'cookies in callback')
           cookiesToSet.forEach(({ name, value, options }) => {
-            const cookieOptions = {
+            // Explicit flags for cross-site reliability
+            response.cookies.set(name, value, {
               ...options,
               path: '/',
-              domain,
-              sameSite: 'lax' as const,  // ← This fixes the TS error
+              sameSite: 'lax',
               secure: true,
               httpOnly: true,
-              maxAge: 60 * 60 * 24 * 7,
-            }
-            response.cookies.set(name, value, cookieOptions)
-            console.log(`Cookie set: ${name}, value length: ${value.length}, domain: ${cookieOptions.domain}, path: ${cookieOptions.path}`)
+            })
+            console.log('Cookie set:', name, 'length:', value.length)
           })
         },
       },
@@ -50,18 +44,12 @@ export async function GET(request: NextRequest) {
   const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code)
 
   if (error) {
-    console.error('Exchange code error:', error.message)
+    console.error('Exchange error:', error.message)
     return NextResponse.redirect(new URL('/login?error=auth_failed', request.url))
   }
 
-  if (!session) {
-    console.warn('Session was null after exchange')
-    return NextResponse.redirect(new URL('/login?error=no_session', request.url))
-  }
+  console.log('Session created:', session ? 'success' : 'failed', 'User:', session?.user?.email || 'none')
 
-  console.log('Session created: success')
-  console.log('User email:', session.user?.email || 'none')
-  console.log('Access token length:', session.access_token?.length || 0)
-
+  // Force redirect to admin
   return NextResponse.redirect(new URL('/admin/dashboard', request.url))
 }
