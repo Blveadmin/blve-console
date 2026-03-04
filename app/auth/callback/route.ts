@@ -24,17 +24,17 @@ export async function GET(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          console.log('Setting', cookiesToSet.length, 'cookies in callback')
+          console.log('Callback setting', cookiesToSet.length, 'cookies')
           cookiesToSet.forEach(({ name, value, options }) => {
-            // Explicit flags for cross-site reliability
             response.cookies.set(name, value, {
-              ...options,
               path: '/',
+              domain: request.headers.get('host')?.split(':')[0], // explicit domain
               sameSite: 'lax',
               secure: true,
               httpOnly: true,
+              maxAge: 60 * 60 * 24 * 7, // 7 days
             })
-            console.log('Cookie set:', name, 'length:', value.length)
+            console.log('Set cookie:', name, 'value length:', value.length)
           })
         },
       },
@@ -48,8 +48,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=auth_failed', request.url))
   }
 
-  console.log('Session created:', session ? 'success' : 'failed', 'User:', session?.user?.email || 'none')
+  console.log('Session created in callback:', session ? 'success' : 'failed', 'User:', session?.user?.email || 'none')
 
-  // Force redirect to admin
   return NextResponse.redirect(new URL('/admin/dashboard', request.url))
 }
