@@ -2,10 +2,11 @@
 
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
-import { createClient } from '@supabase/supabase-js' // client-side only
+import { createClient } from '@supabase/supabase-js'
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js' // ← THIS IMPORT FIXES THE ERROR
 
 function LoginContent() {
   const router = useRouter()
@@ -13,15 +14,11 @@ function LoginContent() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Single Supabase client (prevents multiple GoTrueClient warning)
-  const supabaseRef = useRef<any>(null)
-  if (!supabaseRef.current) {
-    supabaseRef.current = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-  }
-  const supabase = supabaseRef.current
+  // Lazy init Supabase client (only runs in browser)
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   useEffect(() => {
     console.log('Login page mounted - starting session check')
@@ -35,34 +32,29 @@ function LoginContent() {
       window.location.hash = ''
     }
 
-    // Aggressive session polling (multiple attempts with delay)
-    const checkSession = async () => {
-      for (let attempt = 1; attempt <= 4; attempt++) {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        console.log(`Session check attempt ${attempt}:`, { hasSession: !!session, error })
-
-        if (session) {
-          console.log('Session found on attempt ' + attempt + ' - redirecting to:', redirectPath)
-          setTimeout(() => {
-            router.replace(redirectPath)
-            // Force full refresh as fallback
-            window.location.href = redirectPath
-          }, 300 * attempt) // increase delay per attempt
-          return
-        }
-
-        // Wait 300ms before next attempt
-        await new Promise(r => setTimeout(r, 300))
+    // Check session
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('getSession result:', { hasSession: !!session, error })
+      if (session) {
+        console.log('Session found - redirecting to:', redirectPath)
+        // Small delay to ensure cookie is synced
+        setTimeout(() => {
+          router.replace(redirectPath)
+          // Force full refresh as fallback
+          window.location.href = redirectPath
+        }, 500)
+      } else {
+        console.log('No session - showing login UI')
+        setLoading(false)
       }
-
-      console.log('No session after all retries - showing login UI')
+    }).catch(err => {
+      console.error('getSession error:', err)
+      setError('Session check failed - try again')
       setLoading(false)
-    }
+    })
 
-    checkSession()
-
-    // Auth state listener
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+    // Auth state listener with typed parameters
+    const { data: listener } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       console.log('Auth state changed:', event, session ? 'session present' : 'no session')
       if (session) {
         console.log('Listener detected session - redirecting')
