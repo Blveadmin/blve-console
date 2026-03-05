@@ -1,5 +1,7 @@
 'use client'
 
+// CACHE BUSTER - March 5 2026 - force full rebuild
+
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { useEffect, useState, useRef } from 'react'
