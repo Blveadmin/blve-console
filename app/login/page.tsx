@@ -1,5 +1,7 @@
 'use client'
 
+// CACHE BREAKER - VISIBLE - 2026-03-05 - FORCE UPDATE
+
 // CACHE BREAKER 2026-03-05 - FORCE DYNAMIC
 
 import { Auth } from '@supabase/auth-ui-react'
@@ -133,3 +135,4 @@ export default function LoginPage() {
   )
 }
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
