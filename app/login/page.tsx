@@ -1,9 +1,5 @@
 'use client'
 
-// CACHE BREAKER - VISIBLE - 2026-03-05 - FORCE UPDATE
-
-// CACHE BREAKER 2026-03-05 - FORCE DYNAMIC
-
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { useEffect, useState, useRef } from 'react'
@@ -46,7 +42,6 @@ function LoginContent() {
         const error = response.error
 
         console.log(`Session check attempt ${attempt}:`, {
-          fullResponse: response,
           hasSession: !!session,
           sessionUser: session?.user?.email || 'none',
           accessTokenLength: session?.access_token?.length || 0,
@@ -57,8 +52,7 @@ function LoginContent() {
           console.log('Session FOUND on attempt ' + attempt + ' - redirecting to:', redirectPath)
           setTimeout(() => {
             router.replace(redirectPath)
-            // Force full reload as fallback
-            window.location.href = redirectPath
+            window.location.href = redirectPath // fallback full reload
           }, 500)
           return
         }
@@ -134,5 +128,3 @@ export default function LoginPage() {
     </div>
   )
 }
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
