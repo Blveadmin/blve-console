@@ -1,5 +1,8 @@
 'use client'
 
+
+// VISIBLE MARKER - LIVE ON 2026-03-05 - BART TEST
+
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { useEffect, useState, useRef } from 'react'
