@@ -1,5 +1,7 @@
 'use client'
 
+// VISIBLE TEST LINE - March 5 2026 - should appear in source
+
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { useEffect, useState, useRef } from 'react'
