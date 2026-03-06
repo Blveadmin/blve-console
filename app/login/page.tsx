@@ -113,7 +113,7 @@ function LoginContent() {
           }}
           providers={['google']}
           onlyThirdPartyProviders={true}
-          redirectTo="https://blve-console-pcvm.vercel.app/auth/callback"  // ← FIXED: hard-coded production URL
+          redirectTo="https://blve-console-pcvm.vercel.app/auth/callback"
         />
       </div>
     </div>
