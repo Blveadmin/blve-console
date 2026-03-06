@@ -1,55 +1,39 @@
-import { createServerClient } from '@supabase/ssr'
+// app/auth/callback/route.ts
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
 
-export async function GET(request: NextRequest) {
+export const dynamic = 'force-dynamic'
+
+export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
 
-  console.log('Callback hit - code:', code ? 'present' : 'missing')
+  console.log('Callback hit - URL:', requestUrl.toString())
+  console.log('Code present:', !!code)
 
   if (!code) {
-    console.log('No code - redirect to login')
-    return NextResponse.redirect(new URL('/login', request.url))
+    console.log('No code provided - redirecting to login')
+    return NextResponse.redirect(new URL('/login?error=no_code', request.url))
   }
 
-  const response = NextResponse.next()
+  const cookieStore = cookies()
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          console.log('Setting', cookiesToSet.length, 'cookies in callback')
-          cookiesToSet.forEach(({ name, value, options }) => {
-            // Explicit flags for cross-site reliability
-            response.cookies.set(name, value, {
-              ...options,
-              path: '/',
-              sameSite: 'lax',
-              secure: true,
-              httpOnly: true,
-            })
-            console.log('Cookie set:', name, 'length:', value.length)
-          })
-        },
-      },
-    }
-  )
+  console.log('Exchanging code for session...')
 
   const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code)
 
   if (error) {
-    console.error('Exchange error:', error.message)
+    console.error('Session exchange failed:', error.message)
     return NextResponse.redirect(new URL('/login?error=auth_failed', request.url))
   }
 
-  console.log('Session created:', session ? 'success' : 'failed', 'User:', session?.user?.email || 'none')
+  console.log('Session created successfully')
+  console.log('User email:', session?.user?.email || 'none')
+  console.log('Access token length:', session?.access_token?.length || 0)
 
-  // Force redirect to admin
-  return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+  // Redirect to dashboard
+  const redirectUrl = new URL('/admin/dashboard', request.url)
+  return NextResponse.redirect(redirectUrl)
 }
