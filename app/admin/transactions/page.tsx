@@ -1,133 +1,14 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
-
-export default async function TransactionsPage() {
-  const cookieStore = await cookies()  // ← Await here to make it synchronous
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options)
-          })
-        },
-      },
-    }
-  )
-
-  // Protect the page
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) {
-    redirect('/login')
-  }
-
-  // Fetch transactions (adjust columns/joins to your actual schema)
-  const { data: transactions, error } = await supabase
-    .from('transactions')
-    .select(`
-      id,
-      created_at,
-      amount,
-      card_last4,
-      member_id,
-      merchant_id,
-      members!member_id (name, email),
-      merchants!merchant_id (business_name, organization_id),
-      merchants!merchant_id (organizations!organization_id (name))
-    `)
-    .order('created_at', { ascending: false })
-    .limit(50)
-
-  if (error) {
-    console.error('Transactions fetch error:', error)
-    return (
-      <div className="p-8">
-        <h1 className="text-2xl font-bold mb-4">Transactions</h1>
-        <p className="text-red-600">Failed to load transactions: {error.message}</p>
-      </div>
-    )
-  }
-
-  // Process data: calculate commission (4% to recruiting org or BLVE default)
-  const processedTransactions = transactions?.map((tx: any) => {
-    const amount = tx.amount // assume dollars; if cents, divide by 100
-    const recruitingOrg = tx.merchants?.organizations
-    const recruitingOrgName = recruitingOrg?.name || 'BLVE (default)'
-
-    const commissionRate = 0.04
-    const commissionAmount = amount * commissionRate
-    const netToMerchant = amount - commissionAmount
-
-    return {
-      ...tx,
-      recruiting_org_name: recruitingOrgName,
-      commission_amount: commissionAmount.toFixed(2),
-      net_to_merchant: netToMerchant.toFixed(2),
-      formatted_date: new Date(tx.created_at).toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      }),
-      formatted_amount: `$${amount.toFixed(2)}`
-    }
-  }) || []
-
+export default function TransactionsPage() {
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-6">Transactions</h1>
-
-      {processedTransactions.length === 0 ? (
-        <p className="text-gray-500">No transactions found.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date/Time</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Card Last 4</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Member</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Merchant</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Recruiting Org (Getting Commission)</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commission (4%)</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Net to Merchant</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {processedTransactions.map((tx: any) => (
-                <tr key={tx.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">{tx.formatted_date}</td>
-                  <td className="px-6 py-4 whitespace-nowrap font-medium">{tx.formatted_amount}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">**** **** **** {tx.card_last4 || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {tx.members?.name || tx.members?.email || 'Unknown'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{tx.merchants?.business_name || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap font-semibold text-blue-700">
-                    {tx.recruiting_org_name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-green-600 font-medium">
-                    ${tx.commission_amount}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                    ${tx.net_to_merchant}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+    <div className="min-h-screen p-8 bg-gray-50">
+      <h1 className="text-4xl font-bold mb-6 text-blue-800">Transactions Page</h1>
+      <p className="text-xl mb-4">This is the dedicated transactions page.</p>
+      <p className="text-gray-600 mb-8">
+        If you're seeing this, the page loaded correctly. No redirect happened.
+      </p>
+      <div className="bg-white p-6 rounded-lg shadow">
+        <p className="text-lg">Current URL: <strong>{typeof window !== 'undefined' ? window.location.href : 'Server render'}</strong></p>
+      </div>
     </div>
   )
 }
