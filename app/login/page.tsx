@@ -15,7 +15,7 @@ function LoginContent() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Debug: Log Supabase env vars on mount to confirm they are loaded
+  // Debug: Log Supabase env vars on mount
   useEffect(() => {
     console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
     console.log('Supabase Anon Key length:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 'missing')
@@ -31,18 +31,18 @@ function LoginContent() {
   }
   const supabase = supabaseRef.current
 
-  // CLEAN UP HASH FRAGMENT FROM URL AS EARLY AS POSSIBLE
+  // CLEAN UP HASH FRAGMENT FROM URL (runs early on mount)
   useEffect(() => {
     if (window.location.hash) {
-      // Remove hash without reloading or adding to history
+      // Remove hash without reloading or adding history entry
       window.history.replaceState(
         {},
         document.title,
         window.location.pathname + window.location.search
       )
-      console.log('Hash fragment cleaned from URL')
+      console.log('Hash fragment removed from URL')
     }
-  }, []) // empty deps = run once on mount
+  }, []) // empty deps = run once
 
   // Session check + auth listener
   useEffect(() => {
@@ -51,6 +51,7 @@ function LoginContent() {
     const redirectPath = searchParams.get('redirect') || '/admin/dashboard'
     console.log('Redirect target from query:', redirectPath)
 
+    // Optional: clear hash here too (redundant but harmless)
     if (window.location.hash) {
       console.log('Clearing callback hash fragment')
       window.location.hash = ''
