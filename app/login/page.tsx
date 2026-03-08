@@ -15,13 +15,13 @@ function LoginContent() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Debug: Log Supabase env vars on mount
+  // Debug env vars
   useEffect(() => {
     console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
     console.log('Supabase Anon Key length:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 'missing')
   }, [])
 
-  // Single Supabase client instance
+  // Supabase client
   const supabaseRef = useRef<any>(null)
   if (!supabaseRef.current) {
     supabaseRef.current = createClient(
@@ -31,31 +31,41 @@ function LoginContent() {
   }
   const supabase = supabaseRef.current
 
-  // CLEAN UP HASH FRAGMENT FROM URL (runs early on mount)
+  // STRONGER HASH CLEANUP - runs early, repeatedly, and on hash change
   useEffect(() => {
-    if (window.location.hash) {
-      // Remove hash without reloading or adding history entry
-      window.history.replaceState(
-        {},
-        document.title,
-        window.location.pathname + window.location.search
-      )
-      console.log('Hash fragment removed from URL')
+    const cleanHash = () => {
+      if (window.location.hash) {
+        window.history.replaceState(
+          null,
+          document.title,
+          window.location.pathname + window.location.search
+        )
+        console.log('Hash fragment removed from URL')
+      }
     }
-  }, []) // empty deps = run once
+
+    // Run immediately
+    cleanHash()
+
+    // Run after short delay (covers Supabase auth timing)
+    const timer = setTimeout(cleanHash, 300)
+
+    // Listen for any future hash changes
+    window.addEventListener('hashchange', cleanHash)
+
+    return () => {
+      window.removeEventListener('hashchange', cleanHash)
+      clearTimeout(timer)
+    }
+  }, [])
 
   // Session check + auth listener
   useEffect(() => {
     console.log('Login page mounted - starting session check')
 
+    // Honor ?redirect= query param from protected pages
     const redirectPath = searchParams.get('redirect') || '/admin/dashboard'
-    console.log('Redirect target from query:', redirectPath)
-
-    // Optional: clear hash here too (redundant but harmless)
-    if (window.location.hash) {
-      console.log('Clearing callback hash fragment')
-      window.location.hash = ''
-    }
+    console.log('Redirect target:', redirectPath)
 
     const checkSession = async () => {
       for (let attempt = 1; attempt <= 4; attempt++) {
@@ -74,7 +84,7 @@ function LoginContent() {
           console.log('Session FOUND on attempt ' + attempt + ' - redirecting to:', redirectPath)
           setTimeout(() => {
             router.replace(redirectPath)
-            window.location.href = redirectPath // fallback full reload
+            window.location.href = redirectPath // fallback
           }, 500)
           return
         }
@@ -82,7 +92,7 @@ function LoginContent() {
         await new Promise(r => setTimeout(r, 400))
       }
 
-      console.log('No session after all retries - showing login UI')
+      console.log('No session after retries - showing login UI')
       setLoading(false)
     }
 
@@ -96,7 +106,7 @@ function LoginContent() {
           user: session?.user?.email || 'none'
         })
         if (session) {
-          console.log('Listener detected session - redirecting')
+          console.log('Listener detected session - redirecting to:', redirectPath)
           setTimeout(() => {
             router.replace(redirectPath)
             window.location.href = redirectPath
