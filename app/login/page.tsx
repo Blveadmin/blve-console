@@ -1,162 +1,126 @@
-'use client'
-// VISIBLE MARKER - LIVE ON 2026-03-05 - BART TEST
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 
-import { Auth } from '@supabase/auth-ui-react'
-import { ThemeSupa } from '@supabase/auth-ui-shared'
-import { useEffect, useState, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
-import { createClient } from '@supabase/supabase-js'
-import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
+export default async function TransactionsPage() {
+  const cookieStore = await cookies()
 
-function LoginContent() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  // Debug env vars
-  useEffect(() => {
-    console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-    console.log('Supabase Anon Key length:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 'missing')
-  }, [])
-
-  // Supabase client
-  const supabaseRef = useRef<any>(null)
-  if (!supabaseRef.current) {
-    supabaseRef.current = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-  }
-  const supabase = supabaseRef.current
-
-  // STRONGER HASH CLEANUP - runs early, repeatedly, and on hash change
-  useEffect(() => {
-    const cleanHash = () => {
-      if (window.location.hash) {
-        window.history.replaceState(
-          null,
-          document.title,
-          window.location.pathname + window.location.search
-        )
-        console.log('Hash fragment removed from URL')
-      }
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options)
+          })
+        },
+      },
     }
-
-    // Run immediately
-    cleanHash()
-
-    // Run after short delay (covers Supabase auth timing)
-    const timer = setTimeout(cleanHash, 300)
-
-    // Listen for any future hash changes
-    window.addEventListener('hashchange', cleanHash)
-
-    return () => {
-      window.removeEventListener('hashchange', cleanHash)
-      clearTimeout(timer)
-    }
-  }, [])
-
-  // Session check + auth listener
-  useEffect(() => {
-    console.log('Login page mounted - starting session check')
-
-    // Honor ?redirect= query param from protected pages
-    const redirectPath = searchParams.get('redirect') || '/admin/dashboard'
-    console.log('Redirect target:', redirectPath)
-
-    const checkSession = async () => {
-      for (let attempt = 1; attempt <= 4; attempt++) {
-        const response = await supabase.auth.getSession()
-        const session = response.data.session
-        const error = response.error
-
-        console.log(`Session check attempt ${attempt}:`, {
-          hasSession: !!session,
-          sessionUser: session?.user?.email || 'none',
-          accessTokenLength: session?.access_token?.length || 0,
-          error: error?.message || 'no error'
-        })
-
-        if (session) {
-          console.log('Session FOUND on attempt ' + attempt + ' - redirecting to:', redirectPath)
-          setTimeout(() => {
-            router.replace(redirectPath)
-            window.location.href = redirectPath // fallback
-          }, 500)
-          return
-        }
-
-        await new Promise(r => setTimeout(r, 400))
-      }
-
-      console.log('No session after retries - showing login UI')
-      setLoading(false)
-    }
-
-    checkSession()
-
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (event: AuthChangeEvent, session: Session | null) => {
-        console.log('Auth state changed:', {
-          event,
-          hasSession: !!session,
-          user: session?.user?.email || 'none'
-        })
-        if (session) {
-          console.log('Listener detected session - redirecting to:', redirectPath)
-          setTimeout(() => {
-            router.replace(redirectPath)
-            window.location.href = redirectPath
-          }, 500)
-        }
-      }
-    )
-
-    return () => {
-      console.log('Cleaning up auth listener')
-      listener.subscription.unsubscribe()
-    }
-  }, [router, searchParams])
-
-  if (loading) return <div className="text-xl">Checking session...</div>
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-blue-50">
-      <div className="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">BLVE Admin Login</h1>
-        {error && <p className="text-red-600 text-center mb-4">{error}</p>}
-
-        <Auth
-          supabaseClient={supabase}
-          appearance={{
-            theme: ThemeSupa,
-            variables: {
-              default: {
-                colors: {
-                  brand: '#2563eb',
-                  brandAccent: '#1d4ed8',
-                },
-              },
-            },
-          }}
-          providers={['google']}
-          onlyThirdPartyProviders={true}
-          redirectTo="https://blve-console-pcvm.vercel.app/auth/callback"
-        />
-      </div>
-    </div>
   )
-}
 
-export default function LoginPage() {
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    // Redirect to login AND tell it to come back here after login
+    redirect(`/login?redirect=${encodeURIComponent('/admin/transactions')}`)
+  }
+
+  // User is logged in → fetch transactions (adjust columns/joins to your schema)
+  const { data: transactions, error } = await supabase
+    .from('transactions')
+    .select(`
+      id,
+      created_at,
+      amount,
+      card_last4,
+      member_id,
+      merchant_id,
+      members!inner (name, email),
+      merchants!inner (business_name, organization_id),
+      merchants!inner (organizations!organization_id (name))
+    `)
+    .order('created_at', { ascending: false })
+    .limit(50)
+
+  if (error) {
+    console.error('Error loading transactions:', error)
+    return <div className="p-8 text-red-600">Failed to load transactions: {error.message}</div>
+  }
+
+  // Process commission (4% to recruiting org or BLVE default)
+  const processed = transactions?.map((tx: any) => {
+    const amount = tx.amount // dollars; divide by 100 if cents
+    const recruitingOrg = tx.merchants?.organizations
+    const orgName = recruitingOrg?.name || 'BLVE (default)'
+
+    const commission = amount * 0.04
+    const net = amount - commission
+
+    return {
+      ...tx,
+      recruiting_org_name: orgName,
+      commission: commission.toFixed(2),
+      net_to_merchant: net.toFixed(2),
+      formatted_date: new Date(tx.created_at).toLocaleString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric',
+        hour: 'numeric', minute: '2-digit', hour12: true
+      }),
+      formatted_amount: `$${amount.toFixed(2)}`
+    }
+  }) || []
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-blue-50">
-      <Suspense fallback={<div className="text-xl">Loading login...</div>}>
-        <LoginContent />
-      </Suspense>
+    <div className="p-8">
+      <h1 className="text-3xl font-bold mb-6">Transactions</h1>
+
+      {processed.length === 0 ? (
+        <p className="text-gray-500">No transactions found.</p>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-gray-200 shadow">
+          <table className="min-w-full divide-y divide-gray-200 bg-white">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date/Time</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Card Last 4</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Merchant</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recruiting Org</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commission (4%)</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net to Merchant</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white">
+              {processed.map((tx: any) => (
+                <tr key={tx.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{tx.formatted_date}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.formatted_amount}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">**** **** **** {tx.card_last4 || 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {tx.members?.name || tx.members?.email || 'Unknown'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {tx.merchants?.business_name || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-700">
+                    {tx.recruiting_org_name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                    ${tx.commission}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    ${tx.net_to_merchant}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
