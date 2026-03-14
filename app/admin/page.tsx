@@ -101,8 +101,16 @@ export default function AdminDashboard() {
                     }
                   >
                     <td className="px-4 py-2 font-semibold">
-                      {expanded[org.id] ? "▼" : "▶"} {org.name}
-                    </td>
+  {expanded[org.id] ? "▼" : "▶"}{" "}
+  <a
+    href={`/admin/org/${org.id}`}
+    className="underline hover:text-blue-600"
+    onClick={(e) => e.stopPropagation()}
+  >
+    {org.name}
+  </a>
+</td>
+
                     <td className="px-4 py-2">${routingPoolTotal.toFixed(2)}</td>
                     <td className="px-4 py-2">{memberTotal}</td>
                     <td className="px-4 py-2">{txTotal}</td>
