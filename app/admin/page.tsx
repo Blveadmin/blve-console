@@ -101,17 +101,18 @@ export default function AdminDashboard() {
                     }
                   >
                     <td className="px-4 py-2 font-semibold">
-  {expanded[org.id] ? "▼" : "▶"}{" "}
-  <a
-    href={`/admin/org/${org.id}`}
-    className="underline hover:text-blue-600"
-    onClick={(e) => e.stopPropagation()}
-  >
-    {org.name}
-  </a>
-</td>
-
-                    <td className="px-4 py-2">${routingPoolTotal.toFixed(2)}</td>
+                      {expanded[org.id] ? "▼" : "▶"}{" "}
+                      <a
+                        href={`/admin/org/${org.id}`}
+                        className="underline hover:text-blue-600"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {org.name}
+                      </a>
+                    </td>
+                    <td className="px-4 py-2">
+                      ${routingPoolTotal.toFixed(2)}
+                    </td>
                     <td className="px-4 py-2">{memberTotal}</td>
                     <td className="px-4 py-2">{txTotal}</td>
                     <td className="px-4 py-2">{avgTx.toFixed(2)}</td>
@@ -121,11 +122,15 @@ export default function AdminDashboard() {
                   {expanded[org.id] &&
                     orgSubs.map((sub: any) => (
                       <tr key={sub.id} className="bg-white">
-                        <td className="px-8 py-2 text-gray-700">{sub.name}</td>
+                        <td className="px-8 py-2 text-gray-700">
+                          {sub.name}
+                        </td>
                         <td className="px-4 py-2">${sub.routing_pool}</td>
                         <td className="px-4 py-2">{sub.member_count}</td>
                         <td className="px-4 py-2">{sub.tx_count}</td>
-                        <td className="px-4 py-2">{sub.tx_avg.toFixed(2)}</td>
+                        <td className="px-4 py-2">
+                          {sub.tx_avg.toFixed(2)}
+                        </td>
                       </tr>
                     ))}
                 </>
