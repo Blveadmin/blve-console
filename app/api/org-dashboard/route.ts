@@ -30,6 +30,17 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error
 
+    // Fetch all members (for org detail pages)
+    const { data: membersData } = await supabase
+      .from('members')
+      .select('*')
+
+    // Fetch all transactions (for org detail pages)
+    const { data: transactionsData } = await supabase
+      .from('transactions')
+      .select('*')
+      .order('timestamp', { ascending: false })
+
     // Enrich each org with sub-org count, member count, tx count, tx avg
     const enriched = await Promise.all(
       orgsData.map(async (org) => {
@@ -73,6 +84,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       orgs: enriched,
+      members: membersData || [],
+      transactions: transactionsData || [],
       summary: {
         total_pool: totalPool,
         total_orgs: orgsData.length,
