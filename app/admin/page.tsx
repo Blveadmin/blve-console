@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function AdminDashboard() {
-  const supabase = createClient();
-
   const [stats, setStats] = useState({
     members: 0,
     orgs: 0,
@@ -14,14 +12,15 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function loadStats() {
-      const [{ count: memberCount }, { count: orgCount }, { count: txCount }] =
-        await Promise.all([
-          supabase.from("members").select("*", { count: "exact", head: true }),
-          supabase.from("orgs").select("*", { count: "exact", head: true }),
-          supabase
-            .from("transactions")
-            .select("*", { count: "exact", head: true }),
-        ]);
+      const [
+        { count: memberCount },
+        { count: orgCount },
+        { count: txCount }
+      ] = await Promise.all([
+        supabase.from("members").select("*", { count: "exact", head: true }),
+        supabase.from("orgs").select("*", { count: "exact", head: true }),
+        supabase.from("transactions").select("*", { count: "exact", head: true }),
+      ]);
 
       setStats({
         members: memberCount ?? 0,
@@ -75,8 +74,7 @@ export default function AdminDashboard() {
         <div className="p-6 bg-white rounded shadow">
           <h2 className="text-xl font-semibold mb-2">Recent Activity</h2>
           <p className="text-gray-600">
-            Coming soon: live feed of member joins, transactions, and routing
-            events.
+            Coming soon: live feed of member joins, transactions, and routing events.
           </p>
         </div>
       </div>
