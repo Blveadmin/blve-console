@@ -1,60 +1,49 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { NextResponse } from 'next/server';
+import { createClient } from "@/utils/supabase/server";
 
 export async function GET() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  try {
+    const supabase = await createClient();
 
-  // Fetch members
-  const { data: members, error: membersError } = await supabase
-    .from('members')
-    .select('*')
+    const [membersRes, orgsRes, txRes, routingRes] = await Promise.all([
+      supabase.from('members').select('id, org_id'),
+      supabase.from('organizations').select('id, name'),
+      supabase.from('transactions').select('org_id, routing_amount'),
+      supabase.from('routing').select('org_id, routed_amount')
+    ]);
 
-  // Fetch orgs
-  const { data: orgs, error: orgsError } = await supabase
-    .from('organizations')
-    .select('*')
+    if (membersRes.error) throw membersRes.error;
+    if (orgsRes.error) throw orgsRes.error;
 
-  // Fetch transactions
-  const { data: transactions, error: txError } = await supabase
-    .from('transactions')
-    .select('*')
+    const members = membersRes.data || [];
+    const orgs = orgsRes.data || [];
+    const transactions = txRes.data || [];
+    const routing = routingRes.data || [];
 
-  if (membersError || orgsError || txError) {
-    return NextResponse.json(
-      { error: 'Failed to load identity layer data' },
-      { status: 500 }
-    )
+    const membersByOrg = orgs.map(org => ({
+      org_id: org.id,
+      org_name: org.name,
+      members: members.filter(m => m.org_id === org.id).length
+    }));
+
+    const routingByOrg = orgs.map(org => ({
+      org_id: org.id,
+      org_name: org.name,
+      routing_total: routing
+        .filter(r => r.org_id === org.id)
+        .reduce((sum, r) => sum + Number(r.routed_amount || 0), 0)
+    }));
+
+    return NextResponse.json({
+      success: true,
+      totalMembers: members.length,
+      totalOrgs: orgs.length,
+      totalTransactions: transactions.length + routing.length,
+      membersByOrg,
+      routingByOrg
+    });
+  } catch (err: any) {
+    console.error('Identity error:', err);
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
-
-  // Identity-layer metrics
-  const totalMembers = members.length
-  const totalOrgs = orgs.length
-  const totalTransactions = transactions.length
-
-  // Members per org
-  const membersByOrg = orgs.map(org => ({
-    org_id: org.id,
-    org_name: org.name,
-    members: members.filter(m => m.org_id === org.id).length
-  }))
-
-  // Routing totals per org
-  const routingByOrg = orgs.map(org => ({
-    org_id: org.id,
-    org_name: org.name,
-    routing_total: transactions
-      .filter(t => t.org_id === org.id)
-      .reduce((sum, t) => sum + (t.routing_amount || 0), 0)
-  }))
-
-  return NextResponse.json({
-    totalMembers,
-    totalOrgs,
-    totalTransactions,
-    membersByOrg,
-    routingByOrg
-  })
 }

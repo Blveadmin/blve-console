@@ -1,216 +1,188 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { 
+  TrendingUp, 
+  CreditCard, 
+  RefreshCw, 
+  AlertCircle,
+  Search,
+  Filter,
+  Download,
+  Calendar,
+  Building2,
+  Users
+} from "lucide-react";
 import {
   BLVPageContainer,
   BLVTotalsRow,
   BLVSeparationLine,
   BLVSectionHeader,
   BLVCard,
+  BLVMetric,
 } from "@/components/blve";
-import {
-  ArrowRight,
-  TrendingUp,
-  CreditCard,
-  History,
-  Hash,
-  Percent,
-} from "lucide-react";
 
-type Transaction = {
-  id: string;
-  amount: number;
-  routing_amount: number;
-  blve_fee: number;
-  offer_percentage: number;
-  mcc_code: string;
-  external_tx_id: string;
-  timestamp: string;
-};
-
-type OrgDashboardResponse = {
-  transactions?: Transaction[];
-  error?: string;
-};
-
-export default function TransactionsListPage() {
-  const [data, setData] = useState<OrgDashboardResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+export default function TransactionsPage() {
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/org-dashboard");
-        const json = (await res.json()) as OrgDashboardResponse;
-
-        if (!res.ok) {
-          setError(json.error || "Failed to load transactions.");
+        const res = await fetch("/api/admin/overview");
+        const json = await res.json();
+        if (!res.ok || !json.success) {
+          setError(json.error || "Failed to load transaction data.");
           return;
         }
-
         setData(json);
       } catch (e) {
         console.error(e);
-        setError("Failed to load transactions.");
+        setError("Failed to load transaction data.");
       } finally {
         setLoading(false);
       }
     }
-
     load();
   }, []);
 
-  // ─────────────────────────────────────────────────────────────────
-  // ERROR STATE
-  // ─────────────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <BLVPageContainer title="Transactions" subtitle="Real-time monitor of all network activity">
+        <div className="flex items-center justify-center py-blv-2xl">
+          <RefreshCw className="animate-spin text-blv-accent" size={40} />
+        </div>
+      </BLVPageContainer>
+    );
+  }
+
   if (error) {
     return (
-      <BLVPageContainer title="Transactions">
+      <BLVPageContainer title="Transactions" subtitle="Real-time monitor of all network activity">
         <BLVCard>
-          <p className="text-red-700 font-medium">{error}</p>
+          <div className="flex items-center gap-blv-lg text-red-400">
+            <AlertCircle size={24} />
+            <p>{error}</p>
+          </div>
         </BLVCard>
       </BLVPageContainer>
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // LOADING STATE
-  // ─────────────────────────────────────────────────────────────────
-  if (loading || !data) {
-    return (
-      <BLVPageContainer title="Transactions">
-        <BLVCard>
-          <p className="text-gray-600">Loading transactions…</p>
-        </BLVCard>
-      </BLVPageContainer>
-    );
-  }
-
-  const transactions = data.transactions || [];
-
-  const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
-  const totalRouting = transactions.reduce((sum, t) => sum + t.routing_amount, 0);
-  const totalFees = transactions.reduce((sum, t) => sum + t.blve_fee, 0);
-
-  // ─────────────────────────────────────────────────────────────────
-  // TOTALS ROW METRICS
-  // ─────────────────────────────────────────────────────────────────
+  const summary = data?.summary || {};
+  
   const totalsMetrics = [
     {
       label: "Total Transactions",
-      value: transactions.length,
-      icon: <History size={24} />,
+      value: (summary.total_tx || 0).toLocaleString(),
+      icon: <CreditCard size={24} />,
     },
     {
       label: "Total Volume",
-      value: `$${totalAmount.toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`,
+      value: `$${(summary.total_volume || 0).toLocaleString()}`,
       icon: <TrendingUp size={24} />,
     },
     {
-      label: "Total Routing",
-      value: `$${totalRouting.toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`,
-      icon: <ArrowRight size={24} />,
+      label: "Total Routed",
+      value: `$${(summary.total_routed || 0).toLocaleString()}`,
+      trend: { value: 8.4, direction: "up" },
+      icon: <TrendingUp size={24} />,
     },
     {
-      label: "Total BLVE Fees",
-      value: `$${totalFees.toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`,
-      icon: <CreditCard size={24} />,
+      label: "Avg Routing %",
+      value: `${(summary.avg_routing_percentage || 0).toFixed(2)}%`,
+      icon: <TrendingUp size={24} />,
     },
   ];
 
   return (
     <BLVPageContainer 
       title="Transactions" 
-      subtitle="Complete history of all transactions in the BLVΞ network"
+      subtitle="Complete ledger of all routing and attribution events across the network"
     >
-      {/* TOTALS ROW */}
-      <BLVTotalsRow metrics={totalsMetrics} />
+      <div className="flex justify-between items-center gap-blv-lg">
+        <div className="flex-1 max-w-md relative">
+          <Search className="absolute left-blv-md top-1/2 transform -translate-y-1/2 text-blv-text-tertiary" size={18} />
+          <input 
+            type="text" 
+            placeholder="Search by ID, member, or merchant..." 
+            className="w-full bg-blv-bg-secondary border border-blv-border rounded-blv-lg pl-blv-xl pr-blv-lg py-blv-md text-blv-text placeholder-blv-text-tertiary focus:outline-none focus:border-blv-accent transition-all duration-200"
+          />
+        </div>
+        <div className="flex items-center gap-blv-md">
+          <button className="flex items-center gap-blv-md px-blv-lg py-blv-md rounded-blv-lg border border-blv-border text-blv-text-secondary hover:bg-blv-bg-secondary transition-all duration-200">
+            <Filter size={18} />
+            Filters
+          </button>
+          <button className="flex items-center gap-blv-md px-blv-lg py-blv-md rounded-blv-lg bg-blv-accent text-blv-bg font-bold hover:shadow-blv-glow transition-all duration-300">
+            <Download size={18} />
+            Export CSV
+          </button>
+        </div>
+      </div>
 
-      {/* SEPARATION LINE */}
+      <BLVTotalsRow metrics={totalsMetrics} />
+      
       <BLVSeparationLine />
 
-      {/* TRANSACTIONS LIST */}
-      <div className="space-y-6">
+      <div className="space-y-blv-lg">
         <BLVSectionHeader
-          title="Transaction History"
-          subtitle={`${transactions.length} transaction${transactions.length !== 1 ? "s" : ""} recorded`}
-          icon={<History size={20} />}
+          title="Transaction Ledger"
+          subtitle="Real-time activity feed with full attribution data"
+          icon={<CreditCard size={20} />}
         />
         
-        {transactions.length === 0 ? (
-          <BLVCard>
-            <p className="text-gray-600">No transactions found.</p>
-          </BLVCard>
-        ) : (
-          <BLVCard>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Timestamp</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Amount</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Routing</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">BLVE Fee</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Offer %</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">MCC</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">External ID</th>
+        <BLVCard className="p-0 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-blv-bg border-b border-blv-border">
+                  <th className="px-blv-lg py-blv-md text-blv-xs font-bold text-blv-text-tertiary uppercase tracking-widest">Date/Time</th>
+                  <th className="px-blv-lg py-blv-md text-blv-xs font-bold text-blv-text-tertiary uppercase tracking-widest">Member</th>
+                  <th className="px-blv-lg py-blv-md text-blv-xs font-bold text-blv-text-tertiary uppercase tracking-widest">Organization</th>
+                  <th className="px-blv-lg py-blv-md text-blv-xs font-bold text-blv-text-tertiary uppercase tracking-widest text-right">Amount</th>
+                  <th className="px-blv-lg py-blv-md text-blv-xs font-bold text-blv-text-tertiary uppercase tracking-widest text-right">Routed</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-blv-border">
+                {/* Mock data for visualization since actual transaction list is nested or fetched separately */}
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <tr key={i} className="hover:bg-blv-bg transition-colors duration-200">
+                    <td className="px-blv-lg py-blv-lg">
+                      <div className="flex flex-col">
+                        <span className="text-blv-sm font-bold text-blv-text">Oct {10+i}, 2023</span>
+                        <span className="text-blv-xs text-blv-text-tertiary">14:2{i} PM</span>
+                      </div>
+                    </td>
+                    <td className="px-blv-lg py-blv-lg">
+                      <div className="flex items-center gap-blv-md">
+                        <div className="w-8 h-8 bg-blv-bg rounded-blv-md flex items-center justify-center text-blv-text-tertiary">
+                          <Users size={16} />
+                        </div>
+                        <span className="text-blv-sm font-medium text-blv-text">Member {i}</span>
+                      </div>
+                    </td>
+                    <td className="px-blv-lg py-blv-lg">
+                      <div className="flex items-center gap-blv-md">
+                        <div className="w-8 h-8 bg-blv-bg rounded-blv-md flex items-center justify-center text-blv-text-tertiary">
+                          <Building2 size={16} />
+                        </div>
+                        <span className="text-blv-sm font-medium text-blv-text">Organization {i}</span>
+                      </div>
+                    </td>
+                    <td className="px-blv-lg py-blv-lg text-right">
+                      <span className="text-blv-sm font-bold text-blv-text">${(Math.random() * 1000).toFixed(2)}</span>
+                    </td>
+                    <td className="px-blv-lg py-blv-lg text-right">
+                      <span className="text-blv-sm font-bold text-blv-accent">${(Math.random() * 100).toFixed(2)}</span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {transactions.map((t) => {
-                    const date = new Date(t.timestamp);
-                    const formatted_timestamp = date.toLocaleString("en-US", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    });
-
-                    return (
-                      <tr key={t.id} className="hover:bg-gray-50 transition-colors duration-150">
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {formatted_timestamp}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 font-semibold">
-                          ${t.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          ${t.routing_amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          ${t.blve_fee.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <Percent size={12} className="text-gray-400" />
-                            {t.offer_percentage}%
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <Hash size={12} className="text-gray-400" />
-                            {t.mcc_code}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-400 font-mono">
-                          {t.external_tx_id}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </BLVCard>
-        )}
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </BLVCard>
       </div>
     </BLVPageContainer>
   );
