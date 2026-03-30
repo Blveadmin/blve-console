@@ -1,15 +1,22 @@
 /**
  * BLVΞ Routing Logic Engine
- * 
+ *
  * Core routing logic for deterministically calculating economic impact
  * from transactions. All calculations are transparent and auditable.
  */
 
 import { createClient } from "@supabase/supabase-js";
 
-// Create a server-side Supabase client
+// ─────────────────────────────────────────────────────────────
+// Server-side Supabase client (admin)
+// ─────────────────────────────────────────────────────────────
+
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error("Missing Supabase environment variables for routing logic");
+}
+
 const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
@@ -70,7 +77,7 @@ export async function getMemberOrgInfo(
     const actualOrgId = orgData.parent_org_id || orgId;
 
     // If it's a sub-org, fetch parent org name
-    let parentOrgData = null;
+    let parentOrgData: { id: string; name: string } | null = null;
     if (orgData.parent_org_id) {
       const { data: parentData } = await supabaseAdmin
         .from("organizations")
@@ -95,7 +102,7 @@ export async function getMemberOrgInfo(
 
 /**
  * Calculate routing impact for a transaction
- * 
+ *
  * Routing Rules:
  * - Base routing: 10% of transaction amount
  * - Adjustments based on org type and member role
@@ -131,7 +138,7 @@ export async function applyRoutingRules(
   merchantId: string,
   amount: number,
   timestamp: string
-): Promise<RoutingCalculation | null> {
+): Promise[RoutingCalculation | null> {
   try {
     // Get member's org info
     const memberOrgInfo = await getMemberOrgInfo(memberId);
@@ -178,10 +185,13 @@ export async function getOrgRoutingImpact(orgId: string): Promise<{
     }
 
     const totalTransactionAmount = data.reduce(
-      (sum, r: any) => sum + r.amount,
+      (sum, r: { amount: number }) => sum + r.amount,
       0
     );
-    const totalRoutedAmount = data.reduce((sum, r: any) => sum + r.routed_amount, 0);
+    const totalRoutedAmount = data.reduce(
+      (sum, r: { routed_amount: number }) => sum + r.routed_amount,
+      0
+    );
     const averageRoutingPercentage =
       totalTransactionAmount > 0
         ? (totalRoutedAmount / totalTransactionAmount) * 100
@@ -224,34 +234,4 @@ export async function getMemberRoutingImpact(memberId: string): Promise<{
       return {
         totalTransactionAmount: 0,
         totalRoutedAmount: 0,
-        averageRoutingPercentage: 0,
-        transactionCount: 0,
-      };
-    }
-
-    const totalTransactionAmount = data.reduce(
-      (sum, r: any) => sum + r.amount,
-      0
-    );
-    const totalRoutedAmount = data.reduce((sum, r: any) => sum + r.routed_amount, 0);
-    const averageRoutingPercentage =
-      totalTransactionAmount > 0
-        ? (totalRoutedAmount / totalTransactionAmount) * 100
-        : 0;
-
-    return {
-      totalTransactionAmount,
-      totalRoutedAmount,
-      averageRoutingPercentage,
-      transactionCount: data.length,
-    };
-  } catch (error) {
-    console.error("Exception getting member routing impact:", error);
-    return {
-      totalTransactionAmount: 0,
-      totalRoutedAmount: 0,
-      averageRoutingPercentage: 0,
-      transactionCount: 0,
-    };
-  }
-}
+        averageRoutingPercentage
