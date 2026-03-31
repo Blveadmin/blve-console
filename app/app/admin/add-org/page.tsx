@@ -20,25 +20,54 @@ function DashboardContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // ✅ React 19–safe effect
   useEffect(() => {
-    setLoading(true);
-    fetch(`/api/org-dashboard?slug=${encodeURIComponent(orgSlug)}`)
-      .then((res) => res.json())
-      .then((result) => {
+    let isMounted = true;
+
+    const load = async () => {
+      if (isMounted) setLoading(true);
+
+      try {
+        const res = await fetch(`/api/org-dashboard?slug=${encodeURIComponent(orgSlug)}`);
+        const result = await res.json();
+
+        if (!isMounted) return;
+
         if (result.success) {
           setData(result.data);
         } else {
           setError(result.error || "Failed to load dashboard");
         }
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+      } catch (err: any) {
+        if (isMounted) setError(err.message);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
   }, [orgSlug]);
 
-  if (loading) return <div className="p-12 text-center"><RefreshCw className="animate-spin mx-auto" /></div>;
-  if (error) return <div className="p-12 text-center text-red-500"><AlertCircle className="mx-auto" /> {error}</div>;
+  if (loading)
+    return (
+      <div className="p-12 text-center">
+        <RefreshCw className="animate-spin mx-auto" />
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="p-12 text-center text-red-500">
+        <AlertCircle className="mx-auto" /> {error}
+      </div>
+    );
 
   const stats = data.stats;
+
   const metrics = [
     {
       label: "Routing Pool",
@@ -70,8 +99,10 @@ function DashboardContent() {
     <BLVPageContainer title={`${data.name} Dashboard`} subtitle={`Performance metrics for ${data.slug}`}>
       <BLVTotalsRow metrics={metrics} />
       <BLVSeparationLine />
+
       <div className="space-y-6">
         <BLVSectionHeader title="Sub-Organizations" icon={<Building2 size={20} />} />
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.sub_orgs.map((sub: any) => (
             <BLVCard key={sub.id} className="p-6">
