@@ -134,3 +134,48 @@ export default function MerchantsPage() {
             merchants.map((merchant: any) => (
               <Link key={merchant.id} href={`/admin/merchants/${merchant.id}`}>
                 <BLVCard hoverable className="group h-full flex flex-col justify-between">
+                  <div className="space-y-blv-lg">
+                    <div className="flex items-center gap-[var(--blv-lg)]">
+                      <div className="w-12 h-12 bg-[var(--blv-bg)] rounded-[var(--blv-radius-xl)] flex items-center justify-center text-[var(--blv-text-primary)]-tertiary group-hover:text-[var(--blv-accent)] transition-colors duration-300">
+                        <CreditCard size={24} />
+                      </div>
+                      <div>
+                        <h3 className="text-[1.125rem] font-bold text-[var(--blv-text-primary)] group-hover:text-[var(--blv-accent)] transition-colors duration-300">
+                          {merchant.name}
+                        </h3>
+                        <p className="text-[0.75rem] text-[var(--blv-text-primary)]-tertiary font-mono mt-[var(--blv-xs)]">
+                          {merchant.id}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-[var(--blv-md)] pt-blv-md">
+                      <div className="flex items-center gap-[var(--blv-xs)] text-[0.75rem] text-[var(--blv-text-primary)]-tertiary font-medium uppercase tracking-wider">
+                        <Tag size={12} />
+                        Retail
+                      </div>
+                      <div className="flex items-center gap-[var(--blv-xs)] text-[0.75rem] text-[var(--blv-text-primary)]-tertiary font-medium uppercase tracking-wider">
+                        <MapPin size={12} />
+                        Miami, FL
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-[var(--blv-xl)] pt-blv-lg border-t border-[var(--blv-border)] flex items-center justify-between group-hover:border-blv-accent transition-colors duration-300">
+                    <span className="text-[0.75rem] text-[var(--blv-text-primary)]-tertiary font-bold uppercase tracking-tighter">
+                      View Details
+                    </span>
+                    <ChevronRight
+                      size={18}
+                      className="text-[var(--blv-text-primary)]-tertiary group-hover:text-[var(--blv-accent)] transform group-hover:translate-x-1 transition-all duration-300"
+                    />
+                  </div>
+                </BLVCard>
+              </Link>
+            ))
+          )}
+        </div>
+      </div>
+    </BLVPageContainer>
+  );
+}
