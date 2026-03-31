@@ -19,7 +19,6 @@ import {
   BLVSeparationLine,
   BLVSectionHeader,
   BLVCard,
-  type Metric,
 } from "@/components/blve";
 
 export default function MerchantsPage() {
@@ -72,31 +71,31 @@ export default function MerchantsPage() {
 
   const merchants = data?.merchants || [];
 
-  // ⭐ FINAL FIX — typed array + literal directions
-  const totalsMetrics: Metric[] = [
+  // ⭐ FINAL FIX — no Metric import, literal directions
+  const totalsMetrics = [
     {
       label: "Total Merchants",
       value: merchants.length,
       icon: <CreditCard size={24} />,
-      trend: { value: 0, direction: "up" },
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Active Terminals",
       value: merchants.length * 2,
       icon: <Building2 size={24} />,
-      trend: { value: 0, direction: "up" },
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Network Coverage",
       value: "94%",
-      trend: { value: 2.4, direction: "up" },
+      trend: { value: 2.4, direction: "up" as const },
       icon: <MapPin size={24} />,
     },
     {
       label: "Avg Transaction",
       value: "$42.50",
       icon: <TrendingUp size={24} />,
-      trend: { value: 0, direction: "up" },
+      trend: { value: 0, direction: "up" as const },
     },
   ];
 
