@@ -40,10 +40,30 @@ function DashboardContent() {
 
   const stats = data.stats;
   const metrics = [
-    { label: "Routing Pool", value: `$${parseFloat(data.routing_pool).toLocaleString()}`, icon: <TrendingUp size={24} /> },
-    { label: "Total Routed", value: `$${stats.total_routed.toLocaleString()}`, icon: <CreditCard size={24} /> },
-    { label: "Members", value: stats.total_members, icon: <Users size={24} /> },
-    { label: "Sub-Orgs", value: stats.active_org_count - 1, icon: <Building2 size={24} /> },
+    {
+      label: "Routing Pool",
+      value: `$${parseFloat(data.routing_pool).toLocaleString()}`,
+      icon: <TrendingUp size={24} />,
+      trend: { value: 0, direction: "up" as const },
+    },
+    {
+      label: "Total Routed",
+      value: `$${stats.total_routed.toLocaleString()}`,
+      icon: <CreditCard size={24} />,
+      trend: { value: 0, direction: "up" as const },
+    },
+    {
+      label: "Members",
+      value: stats.total_members,
+      icon: <Users size={24} />,
+      trend: { value: 0, direction: "up" as const },
+    },
+    {
+      label: "Sub-Orgs",
+      value: stats.active_org_count - 1,
+      icon: <Building2 size={24} />,
+      trend: { value: 0, direction: "up" as const },
+    },
   ];
 
   return (

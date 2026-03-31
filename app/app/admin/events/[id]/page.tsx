@@ -154,16 +154,19 @@ export default function EventDetailPage() {
       label: "Total Transactions",
       value: totalTx,
       icon: <ArrowRight size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Avg Transaction",
       value: `$${avgTx.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       icon: <TrendingUp size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Routing Impact",
       value: `$${totalRouting.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       icon: <History size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
   ];
 

@@ -161,6 +161,7 @@ export default function AdminMemberDetailPage() {
         maximumFractionDigits: 2,
       })}`,
       icon: <TrendingUp size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Routing Contributed",
@@ -169,11 +170,13 @@ export default function AdminMemberDetailPage() {
         maximumFractionDigits: 2,
       })}`,
       icon: <ArrowRight size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Member Status",
       value: "Active",
       icon: <User size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
   ];
 

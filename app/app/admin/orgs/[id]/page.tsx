@@ -141,6 +141,7 @@ export default function OrgDetailPage() {
         maximumFractionDigits: 2,
       })}`,
       icon: <TrendingUp size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Members",
@@ -152,11 +153,13 @@ export default function OrgDetailPage() {
       label: "Transactions",
       value: transactions.length,
       icon: <ArrowRight size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Sub-Organizations",
       value: suborgs.length,
       icon: <GitBranch size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
   ];
 

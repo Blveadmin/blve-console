@@ -55,10 +55,30 @@ export default function AdminOverview() {
 
   const summary = data?.summary || {};
   const metrics = [
-    { label: "Total Pool", value: `$${(summary.total_pool || 0).toLocaleString()}`, icon: <TrendingUp size={24} /> },
-    { label: "Total Routed", value: `$${(summary.total_routed || 0).toLocaleString()}`, icon: <CreditCard size={24} /> },
-    { label: "Organizations", value: summary.total_orgs || 0, icon: <Building2 size={24} /> },
-    { label: "Members", value: summary.total_members || 0, icon: <Users size={24} /> },
+    {
+      label: "Total Pool",
+      value: `$${(summary.total_pool || 0).toLocaleString()}`,
+      icon: <TrendingUp size={24} />,
+      trend: { value: 0, direction: "up" as const },
+    },
+    {
+      label: "Total Routed",
+      value: `$${(summary.total_routed || 0).toLocaleString()}`,
+      icon: <CreditCard size={24} />,
+      trend: { value: 0, direction: "up" as const },
+    },
+    {
+      label: "Organizations",
+      value: summary.total_orgs || 0,
+      icon: <Building2 size={24} />,
+      trend: { value: 0, direction: "up" as const },
+    },
+    {
+      label: "Members",
+      value: summary.total_members || 0,
+      icon: <Users size={24} />,
+      trend: { value: 0, direction: "up" as const },
+    },
   ];
 
   return (

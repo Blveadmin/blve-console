@@ -77,22 +77,25 @@ export default function TransactionsPage() {
       label: "Total Transactions",
       value: (summary.total_tx || 0).toLocaleString(),
       icon: <CreditCard size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Total Volume",
       value: `$${(summary.total_volume || 0).toLocaleString()}`,
       icon: <TrendingUp size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Total Routed",
       value: `$${(summary.total_routed || 0).toLocaleString()}`,
-      trend: { value: 8.4, direction: "up" },
+      trend: { value: 8.4, direction: "up" as const },
       icon: <TrendingUp size={24} />,
     },
     {
       label: "Avg Routing %",
       value: `${(summary.avg_routing_percentage || 0).toFixed(2)}%`,
       icon: <TrendingUp size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
   ];
 

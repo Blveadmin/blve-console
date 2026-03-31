@@ -101,11 +101,13 @@ export default function MembersListPage() {
       label: "Total Members",
       value: members.length,
       icon: <Users size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Active Organizations",
       value: orgs.length,
       icon: <Building2 size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
   ];
 

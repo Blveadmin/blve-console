@@ -138,6 +138,7 @@ export default function OrgRoutingDetailPage() {
         maximumFractionDigits: 2,
       })}`,
       icon: <TrendingUp size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Transaction Volume",
@@ -146,6 +147,7 @@ export default function OrgRoutingDetailPage() {
         maximumFractionDigits: 2,
       })}`,
       icon: <ArrowRight size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Avg Routing / Tx",
@@ -154,6 +156,7 @@ export default function OrgRoutingDetailPage() {
         maximumFractionDigits: 2,
       })}`,
       icon: <GitBranch size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
   ];
 

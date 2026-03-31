@@ -15,7 +15,13 @@ export async function POST(req: Request) {
     }
 
     // Calculate routed amount based on business logic
-    const routedAmount = calculateRouting(amount);
+    const routing = calculateRouting(amount, {
+      memberId,
+      orgId,
+      subOrgId,
+      orgName: "", // Name not required for record insertion
+    });
+    const routedAmount = routing.routedAmount;
 
     const result = await insertRoutingRecord({
       memberId,

@@ -78,21 +78,25 @@ export default function OrgsPage() {
       label: "Total Organizations",
       value: orgs.length,
       icon: <Building2 size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Total Members",
       value: summary.total_members || 0,
       icon: <Users size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Network Routing Pool",
       value: `$${(summary.total_pool || 0).toLocaleString()}`,
       icon: <TrendingUp size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
     {
       label: "Active Nodes",
       value: orgs.filter((o: any) => o.org_type === "parent").length,
       icon: <ShieldCheck size={24} />,
+      trend: { value: 0, direction: "up" as const },
     },
   ];
 
