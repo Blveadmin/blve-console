@@ -15,7 +15,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <Header />
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto bg-[#0B0E11]">
+        <main className="flex-1 w-full max-w-screen-2xl mx-auto px-8 py-8 overflow-y-auto bg-[#0B0E11]">
           {children}
         </main>
       </div>
