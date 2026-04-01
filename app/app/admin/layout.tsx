@@ -14,10 +14,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         {/* Top Header */}
         <Header />
 
-        {/* Page content */}
-        <main className="flex-1 w-full max-w-screen-2xl mx-auto px-8 py-8 overflow-y-auto bg-[#0B0E11]">
-          {children}
-        </main>
+        {/* Centered page content */}
+        <div className="flex-1 w-full flex justify-center overflow-y-auto">
+          <main className="w-full max-w-screen-2xl px-8 py-8">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   );
