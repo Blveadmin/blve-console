@@ -11,10 +11,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <head />
       <body
-        className="bg-[#0B0E11] text-white antialiased"
-        style={{ fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
+        className="bg-[#0B0E11] text-white antialiased min-h-screen flex"
+        style={{
+          fontFamily:
+            "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        }}
       >
-        {children}
+        {/* This flex wrapper allows admin layout to control centering */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {children}
+        </div>
       </body>
     </html>
   );
