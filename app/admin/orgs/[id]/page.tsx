@@ -117,7 +117,6 @@ export default function OrgDetailPage() {
     );
   }
 
-  // METRICS
   const totalTransactionAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
   const totalRoutingAmount = transactions.reduce((sum, t) => sum + t.routing_amount, 0);
   const totalBLVEFees = transactions.reduce((sum, t) => sum + t.blve_fee, 0);
@@ -161,7 +160,6 @@ export default function OrgDetailPage() {
       title={org.name}
       subtitle="Organization overview and analytics"
     >
-      {/* KPI ROW */}
       <BLVTotalsRow metrics={totalsMetrics} />
 
       <BLVSeparationLine />
@@ -257,23 +255,37 @@ export default function OrgDetailPage() {
           <p className="text-[rgba(255,255,255,0.60)]">No sub-organizations.</p>
         </BLVCard>
       ) : (
-        <BLVTwoColumn>
-          {suborgs.map((suborg) => (
-            <BLVCard key={suborg.id} hoverable>
-              <BLVMetric
-                label={suborg.name}
-                value={`$${Number(suborg.routing_pool).toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}`}
-                size="lg"
-              />
-              <p className="text-xs text-[rgba(255,255,255,0.35)] font-mono mt-2">
-                {suborg.id}
-              </p>
-            </BLVCard>
-          ))}
-        </BLVTwoColumn>
+        <BLVTwoColumn
+          leftTitle="Sub‑Organizations"
+          rightTitle="IDs"
+          leftContent={
+            <div className="space-y-4">
+              {suborgs.map((suborg) => (
+                <BLVCard key={suborg.id} hoverable>
+                  <BLVMetric
+                    label={suborg.name}
+                    value={`$${Number(suborg.routing_pool).toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`}
+                    size="lg"
+                  />
+                </BLVCard>
+              ))}
+            </div>
+          }
+          rightContent={
+            <div className="space-y-4">
+              {suborgs.map((suborg) => (
+                <BLVCard key={suborg.id} hoverable>
+                  <p className="text-xs text-[rgba(255,255,255,0.35)] font-mono">
+                    {suborg.id}
+                  </p>
+                </BLVCard>
+              ))}
+            </div>
+          }
+        />
       )}
 
       <BLVSeparationLine />
@@ -290,18 +302,32 @@ export default function OrgDetailPage() {
           <p className="text-[rgba(255,255,255,0.60)]">No members yet.</p>
         </BLVCard>
       ) : (
-        <BLVTwoColumn>
-          {members.map((member) => (
-            <BLVCard key={member.id} hoverable>
-              <h3 className="text-white font-semibold">
-                {member.first_name} {member.last_name}
-              </h3>
-              <p className="text-xs text-[rgba(255,255,255,0.35)] font-mono mt-1">
-                {member.id}
-              </p>
-            </BLVCard>
-          ))}
-        </BLVTwoColumn>
+        <BLVTwoColumn
+          leftTitle="Members"
+          rightTitle="IDs"
+          leftContent={
+            <div className="space-y-4">
+              {members.map((member) => (
+                <BLVCard key={member.id} hoverable>
+                  <h3 className="text-white font-semibold">
+                    {member.first_name} {member.last_name}
+                  </h3>
+                </BLVCard>
+              ))}
+            </div>
+          }
+          rightContent={
+            <div className="space-y-4">
+              {members.map((member) => (
+                <BLVCard key={member.id} hoverable>
+                  <p className="text-xs text-[rgba(255,255,255,0.35)] font-mono">
+                    {member.id}
+                  </p>
+                </BLVCard>
+              ))}
+            </div>
+          }
+        />
       )}
 
       <BLVSeparationLine />
@@ -318,39 +344,53 @@ export default function OrgDetailPage() {
           <p className="text-[rgba(255,255,255,0.60)]">No transactions yet.</p>
         </BLVCard>
       ) : (
-        <BLVTwoColumn>
-          {transactions.map((tx) => (
-            <BLVCard key={tx.id} hoverable>
-              <BLVMetric
-                label="Amount"
-                value={`$${tx.amount.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}`}
-                size="lg"
-              />
-              <BLVMetric
-                label="Routing Amount"
-                value={`$${tx.routing_amount.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}`}
-                size="md"
-              />
-              <BLVMetric
-                label="BLVE Fee"
-                value={`$${tx.blve_fee.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}`}
-                size="md"
-              />
-              <p className="text-xs text-[rgba(255,255,255,0.35)] font-mono mt-2">
-                {tx.external_tx_id}
-              </p>
-            </BLVCard>
-          ))}
-        </BLVTwoColumn>
+        <BLVTwoColumn
+          leftTitle="Transactions"
+          rightTitle="IDs"
+          leftContent={
+            <div className="space-y-4">
+              {transactions.map((tx) => (
+                <BLVCard key={tx.id} hoverable>
+                  <BLVMetric
+                    label="Amount"
+                    value={`$${tx.amount.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`}
+                    size="lg"
+                  />
+                  <BLVMetric
+                    label="Routing Amount"
+                    value={`$${tx.routing_amount.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`}
+                    size="md"
+                  />
+                  <BLVMetric
+                    label="BLVE Fee"
+                    value={`$${tx.blve_fee.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`}
+                    size="md"
+                  />
+                </BLVCard>
+              ))}
+            </div>
+          }
+          rightContent={
+            <div className="space-y-4">
+              {transactions.map((tx) => (
+                <BLVCard key={tx.id} hoverable>
+                  <p className="text-xs text-[rgba(255,255,255,0.35)] font-mono">
+                    {tx.external_tx_id}
+                  </p>
+                </BLVCard>
+              ))}
+            </div>
+          }
+        />
       )}
     </BLVPageContainer>
   );
