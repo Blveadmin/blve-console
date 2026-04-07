@@ -174,4 +174,10 @@ export default function MembersListPage() {
                           {member.email}
                         </div>
 
-                        <span className="text-[rgba(255,255,255,0.20)]">
+                       <span className="text-[rgba(255,255,255,0.20)]">·</span>
+
+<div className="flex items-center gap-1.5 text-xs text-[rgba(255,255,255,0.35)] font-medium">
+  <Calendar size={11} />
+  Joined {joinedDate}
+</div>
+
