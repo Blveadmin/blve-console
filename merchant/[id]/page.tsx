@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+
 import {
   BLVPageContainer,
   BLVTotalsRow,
@@ -10,7 +11,9 @@ import {
   BLVCard,
   BLVTwoColumn,
   BLVMetric,
+  BLVSparkline,
 } from "@/components/blve";
+
 import {
   Store,
   TrendingUp,
@@ -44,6 +47,10 @@ interface OrgDashboardResponse {
   error?: string;
 }
 
+const SPARK_TX = [4, 6, 5, 8, 7, 10, 9, 12, 11, 14];
+const SPARK_VOLUME = [200, 240, 220, 260, 250, 300, 280, 330, 310, 360];
+const SPARK_ROUTING = [20, 24, 22, 28, 26, 32, 30, 36, 34, 40];
+
 export default function MerchantDetailPage() {
   const params = useParams();
   const merchantId = params.id;
@@ -69,27 +76,21 @@ export default function MerchantDetailPage() {
     load();
   }, []);
 
-  // ─────────────────────────────────────────────────────────────────
-  // ERROR STATE
-  // ─────────────────────────────────────────────────────────────────
   if (error) {
     return (
       <BLVPageContainer title="Merchant Details">
         <BLVCard>
-          <p className="text-red-700 font-medium">{error}</p>
+          <p className="text-[#F87171] font-medium">{error}</p>
         </BLVCard>
       </BLVPageContainer>
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // LOADING STATE
-  // ─────────────────────────────────────────────────────────────────
   if (loading || !data) {
     return (
       <BLVPageContainer title="Merchant Details">
         <BLVCard>
-          <p className="text-gray-600">Loading merchant data…</p>
+          <p className="text-[rgba(255,255,255,0.60)]">Loading merchant data…</p>
         </BLVCard>
       </BLVPageContainer>
     );
@@ -100,25 +101,17 @@ export default function MerchantDetailPage() {
 
   const merchant = merchants.find((m: any) => m.id === merchantId);
 
-  // ─────────────────────────────────────────────────────────────────
-  // NOT FOUND STATE
-  // ─────────────────────────────────────────────────────────────────
   if (!merchant) {
     return (
       <BLVPageContainer title="Merchant Details">
         <BLVCard>
-          <p className="text-red-700 font-medium">Merchant not found.</p>
+          <p className="text-[#F87171] font-medium">Merchant not found.</p>
         </BLVCard>
       </BLVPageContainer>
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // CALCULATE METRICS
-  // ─────────────────────────────────────────────────────────────────
-  const merchantTx = transactions.filter(
-    (t: any) => t.merchant_id === merchantId
-  );
+  const merchantTx = transactions.filter((t: any) => t.merchant_id === merchantId);
 
   const totalTransactionAmount = merchantTx.reduce(
     (sum: number, t: any) => sum + (t.amount || 0),
@@ -144,15 +137,13 @@ export default function MerchantDetailPage() {
       })
     : "—";
 
-  // ─────────────────────────────────────────────────────────────────
-  // TOTALS ROW METRICS
-  // ─────────────────────────────────────────────────────────────────
   const totalsMetrics = [
     {
       label: "Total Transactions",
       value: totalTransactions,
       icon: <ShoppingCart size={24} />,
       trend: { value: 0, direction: "up" as const },
+      sparkline: <BLVSparkline data={SPARK_TX} color="#3B82F6" />,
     },
     {
       label: "Transaction Volume",
@@ -161,6 +152,7 @@ export default function MerchantDetailPage() {
         maximumFractionDigits: 2,
       })}`,
       icon: <TrendingUp size={24} />,
+      sparkline: <BLVSparkline data={SPARK_VOLUME} color="#A78BFA" />,
     },
     {
       label: "Routing Generated",
@@ -169,6 +161,7 @@ export default function MerchantDetailPage() {
         maximumFractionDigits: 2,
       })}`,
       icon: <ArrowRight size={24} />,
+      sparkline: <BLVSparkline data={SPARK_ROUTING} color="#4ADE80" />,
     },
     {
       label: "Merchant Status",
@@ -182,217 +175,183 @@ export default function MerchantDetailPage() {
       title={merchant.name}
       subtitle="Merchant profile and transaction overview"
     >
-      {/* MERCHANT INFORMATION CARD */}
+      {/* MERCHANT PROFILE CARD */}
       <BLVCard>
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <div>
-                <p className="text-gray-600 text-sm font-medium mb-1">
-                  Merchant ID
-                </p>
-                <p className="text-gray-900 font-mono text-sm">{merchant.id}</p>
+        <div className="flex items-center gap-6">
+          <div className="w-14 h-14 bg-[#0B0E11] rounded-xl flex items-center justify-center text-[rgba(255,255,255,0.35)]">
+            <Store size={28} />
+          </div>
+
+          <div className="flex-1">
+            <h3 className="text-xl font-semibold text-white">{merchant.name}</h3>
+
+            <div className="flex items-center gap-4 mt-2 flex-wrap">
+              <p className="text-xs text-[rgba(255,255,255,0.35)] font-medium">
+                Category: {merchant.category || "—"}
+              </p>
+
+              <span className="text-[rgba(255,255,255,0.20)]">·</span>
+
+              <div className="flex items-center gap-1.5 text-xs text-[rgba(255,255,255,0.35)] font-medium">
+                <Calendar size={12} />
+                Joined {createdDate}
               </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium mb-1">
-                  Category
-                </p>
-                <p className="text-gray-900 font-medium">
-                  {merchant.category || "—"}
-                </p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <p className="text-gray-600 text-sm font-medium mb-1">
-                  Member Since
-                </p>
-                <div className="flex items-center gap-2">
-                  <Calendar size={16} className="text-gray-400" />
-                  <p className="text-gray-900">{createdDate}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium mb-1">
-                  Total Transactions
-                </p>
-                <p className="text-gray-900 font-medium">{totalTransactions}</p>
-              </div>
+
+              <span className="text-[rgba(255,255,255,0.20)]">·</span>
+
+              <p className="text-xs text-[rgba(255,255,255,0.35)] font-mono">
+                ID: {merchant.id}
+              </p>
             </div>
           </div>
         </div>
       </BLVCard>
 
-      {/* TOTALS ROW */}
+      {/* KPI ROW */}
       <BLVTotalsRow metrics={totalsMetrics} />
 
-      {/* SEPARATION LINE */}
       <BLVSeparationLine />
 
       {/* TRANSACTION OVERVIEW */}
-      <div className="space-y-6">
-        <BLVSectionHeader
-          title="Transaction Overview"
-          subtitle="Volume and routing metrics"
-          icon={<TrendingUp size={20} />}
-        />
-        <BLVTwoColumn
-          leftTitle="Transaction Metrics"
-          rightTitle="Routing Impact"
-          leftContent={
-            <div className="space-y-4">
-              <BLVMetric
-                label="Total Transactions"
-                value={totalTransactions}
-                size="lg"
-              />
-              <BLVMetric
-                label="Total Transaction Volume"
-                value={`$${totalTransactionAmount.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}`}
-                size="md"
-              />
-              <BLVMetric
-                label="Average Transaction Amount"
-                value={`$${averageTransactionAmount.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}`}
-                size="md"
-              />
-            </div>
-          }
-          rightContent={
-            <div className="space-y-4">
-              <BLVMetric
-                label="Total Routing Generated"
-                value={`$${totalRoutingAmount.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}`}
-                size="lg"
-              />
-              <BLVMetric
-                label="Average Routing Per Transaction"
-                value={`$${averageRoutingAmount.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}`}
-                size="md"
-              />
-              <BLVMetric
-                label="Routing as % of Volume"
-                value={
-                  totalTransactionAmount > 0
-                    ? `${((totalRoutingAmount / totalTransactionAmount) * 100).toFixed(2)}%`
-                    : "—"
-                }
-                size="md"
-              />
-            </div>
-          }
-        />
-      </div>
+      <BLVSectionHeader
+        title="Transaction Overview"
+        subtitle="Volume and routing metrics"
+        icon={<TrendingUp size={20} />}
+      />
 
-      {/* TRANSACTION HISTORY */}
-      <div className="space-y-6">
-        <BLVSectionHeader
-          title="Transaction History"
-          subtitle={`${totalTransactions} transaction${totalTransactions !== 1 ? "s" : ""}`}
-          icon={<ArrowRight size={20} />}
-        />
-        {totalTransactions === 0 ? (
-          <BLVCard>
-            <p className="text-gray-600">No transactions for this merchant.</p>
-          </BLVCard>
-        ) : (
-          <BLVCard>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                      Timestamp
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                      Amount
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                      Routing
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                      Offer %
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                      MCC
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                      External ID
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {merchantTx.map((transaction: any) => {
-                    const formattedDate = new Date(
-                      transaction.timestamp
-                    ).toLocaleString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    });
+      <BLVTwoColumn
+        leftTitle="Transaction Metrics"
+        rightTitle="Routing Impact"
+        leftContent={
+          <div className="space-y-4">
+            <BLVMetric label="Total Transactions" value={totalTransactions} size="lg" />
+            <BLVMetric
+              label="Total Volume"
+              value={`$${totalTransactionAmount.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`}
+              size="md"
+            />
+            <BLVMetric
+              label="Average Transaction Amount"
+              value={`$${averageTransactionAmount.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`}
+              size="md"
+            />
+          </div>
+        }
+        rightContent={
+          <div className="space-y-4">
+            <BLVMetric
+              label="Total Routing Generated"
+              value={`$${totalRoutingAmount.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`}
+              size="lg"
+            />
+            <BLVMetric
+              label="Average Routing Per Transaction"
+              value={`$${averageRoutingAmount.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`}
+              size="md"
+            />
+            <BLVMetric
+              label="Routing as % of Volume"
+              value={
+                totalTransactionAmount > 0
+                  ? `${((totalRoutingAmount / totalTransactionAmount) * 100).toFixed(2)}%`
+                  : "—"
+              }
+              size="md"
+            />
+          </div>
+        }
+      />
 
-                    return (
-                      <tr
-                        key={transaction.id}
-                        className="hover:bg-gray-50 transition-colors duration-150"
-                      >
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {formattedDate}
-                        </td>
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          ${transaction.amount.toLocaleString("en-US", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          ${transaction.routing_amount.toLocaleString("en-US", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {transaction.offer_percentage || "—"}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {transaction.mcc_code || "—"}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600 font-mono">
-                          {transaction.external_tx_id || "—"}
-                        </td>
-                      </tr>
-                    );
+      <BLVSeparationLine />
+
+      {/* TRANSACTION HISTORY — CARD-BASED */}
+      <BLVSectionHeader
+        title="Transaction History"
+        subtitle={`${totalTransactions} transaction${totalTransactions !== 1 ? "s" : ""}`}
+        icon={<ArrowRight size={20} />}
+      />
+
+      {totalTransactions === 0 ? (
+        <BLVCard>
+          <p className="text-[rgba(255,255,255,0.60)]">No transactions for this merchant.</p>
+        </BLVCard>
+      ) : (
+        <BLVTwoColumn>
+          {merchantTx.map((tx) => {
+            const routingPercent =
+              tx.amount > 0
+                ? ((tx.routing_amount / tx.amount) * 100).toFixed(2)
+                : "0.00";
+
+            return (
+              <BLVCard key={tx.id} hoverable>
+                <BLVMetric
+                  label="Amount"
+                  value={`$${tx.amount.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`}
+                  size="lg"
+                />
+
+                <BLVMetric
+                  label="Routing Amount"
+                  value={`$${tx.routing_amount.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`}
+                  size="md"
+                />
+
+                <BLVMetric label="Routing %" value={`${routingPercent}%`} size="md" />
+
+                <BLVMetric
+                  label="Offer %"
+                  value={tx.offer_percentage ? `${tx.offer_percentage}%` : "—"}
+                  size="sm"
+                />
+
+                <BLVMetric label="MCC Code" value={tx.mcc_code || "—"} size="sm" />
+
+                <p className="text-xs text-[rgba(255,255,255,0.35)] font-mono mt-2">
+                  {new Date(tx.timestamp).toLocaleString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
-                </tbody>
-              </table>
-            </div>
-          </BLVCard>
-        )}
-      </div>
+                </p>
+              </BLVCard>
+            );
+          })}
+        </BLVTwoColumn>
+      )}
+
+      <BLVSeparationLine />
 
       {/* PERFORMANCE SUMMARY */}
       {totalTransactions > 0 && (
-        <div className="space-y-6">
+        <>
           <BLVSectionHeader
             title="Performance Metrics"
             subtitle="Key performance indicators"
             icon={<Percent size={20} />}
           />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+          <BLVTwoColumn>
             <BLVCard>
               <BLVMetric
                 label="Routing Efficiency"
@@ -400,6 +359,7 @@ export default function MerchantDetailPage() {
                 size="lg"
               />
             </BLVCard>
+
             <BLVCard>
               <BLVMetric
                 label="Transactions Per Day"
@@ -407,8 +367,7 @@ export default function MerchantDetailPage() {
                   totalTransactions > 0
                     ? (
                         totalTransactions /
-                        ((new Date().getTime() -
-                          new Date(merchant.created_at || Date.now()).getTime()) /
+                        ((Date.now() - new Date(merchant.created_at || Date.now()).getTime()) /
                           (1000 * 60 * 60 * 24) +
                           1)
                       ).toFixed(2)
@@ -417,13 +376,13 @@ export default function MerchantDetailPage() {
                 size="lg"
               />
             </BLVCard>
+
             <BLVCard>
               <BLVMetric
                 label="Average Routing Per Day"
                 value={`$${(
                   totalRoutingAmount /
-                  ((new Date().getTime() -
-                    new Date(merchant.created_at || Date.now()).getTime()) /
+                  ((Date.now() - new Date(merchant.created_at || Date.now()).getTime()) /
                     (1000 * 60 * 60 * 24) +
                     1)
                 ).toLocaleString("en-US", {
@@ -433,8 +392,8 @@ export default function MerchantDetailPage() {
                 size="lg"
               />
             </BLVCard>
-          </div>
-        </div>
+          </BLVTwoColumn>
+        </>
       )}
     </BLVPageContainer>
   );
