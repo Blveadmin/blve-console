@@ -24,6 +24,7 @@ import {
   ArrowRight,
   RefreshCw,
   AlertCircle,
+  Building2, // ✅ REQUIRED IMPORT
 } from "lucide-react";
 
 type Member = {
@@ -284,7 +285,7 @@ export default function MemberDetailPage() {
       <BLVSectionHeader
         title="Organization"
         subtitle="Member's parent organization"
-        icon={<Building2 size={20} />}
+        icon={<Building2 size={20} />} // ✅ FIXED
       />
 
       {org ? (
@@ -304,4 +305,3 @@ export default function MemberDetailPage() {
     </BLVPageContainer>
   );
 }
-
