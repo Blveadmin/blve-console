@@ -173,4 +173,42 @@ export default function OrgsPage() {
                     </div>
                   </div>
 
-                  {/* Right */}
+                                   {/* Right */}
+                  <div className="flex items-center gap-8">
+                    <div className="hidden md:block text-right">
+                      <p className="text-base font-bold text-white">{org.member_count || 0}</p>
+                      <p className="text-xs text-[rgba(255,255,255,0.35)] uppercase font-semibold tracking-wider">
+                        Members
+                      </p>
+                    </div>
+
+                    <div className="hidden lg:block text-right">
+                      <p className="text-base font-bold text-white">
+                        ${parseFloat(org.routing_pool || 0).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-[rgba(255,255,255,0.35)] uppercase font-semibold tracking-wider">
+                        Routing Pool
+                      </p>
+                    </div>
+
+                    <div className="hidden lg:block text-right">
+                      <p className="text-base font-bold text-white">{org.sub_org_count || 0}</p>
+                      <p className="text-xs text-[rgba(255,255,255,0.35)] uppercase font-semibold tracking-wider">
+                        Sub‑Orgs
+                      </p>
+                    </div>
+
+                    <ChevronRight
+                      size={20}
+                      className="text-[rgba(255,255,255,0.35)] group-hover:text-[#3B82F6] group-hover:translate-x-0.5 transition-all duration-200"
+                    />
+                  </div>
+                </div>
+              </BLVCard>
+            </Link>
+          ))}
+        </BLVTwoColumn>
+      </BLVPageContainer>
+    );
+}
+
